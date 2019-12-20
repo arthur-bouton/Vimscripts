@@ -1,0 +1,12 @@
+\textnormal
+\emph
+\textrm
+\textsf
+\texttt
+\textup
+\textit
+\textsl
+\textsc
+\textbf
+\textmd
+\textlf
