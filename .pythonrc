@@ -1,0 +1,59 @@
+#-*- coding: utf-8 -*-
+
+# Nom du fichier conservant l'historique des commandes :
+histfile = '.python_history'
+
+
+loaded = []
+
+try :
+	import readline
+except ImportError as e :
+	print( e )
+else :
+	try :
+		import rlcompleter
+		readline.parse_and_bind( 'tab: complete' )
+
+		loaded.append( 'completion' )
+
+		del rlcompleter
+
+	except ImportError as e :
+		print( e )
+
+	try :
+		import os
+		histfile_path = os.path.join( os.environ['HOME'], histfile )
+
+		#file( histfile_path, 'a+' )
+
+		readline.read_history_file( histfile_path )
+
+		import atexit
+		atexit.register( readline.write_history_file, histfile_path )
+
+		loaded.append( 'history' )
+
+		del histfile_path, os
+
+	except ImportError as e :
+		print( e )
+	except IOError as e :
+		print( 'Unable to access %s : %s' % ( e.filename, e.strerror ) )
+
+	del readline
+
+del histfile
+
+try :
+	from numpy import *
+	loaded.append( 'numpy' )
+except ImportError as e :
+	print( e )
+
+# Mes fonctions :
+deltaVs = lambda I, mt, ms : 9.8*I*log( mt/ms )
+deltaVc = lambda I, mt, mc : 9.8*I*log( mt/( mt - mc ) )
+
+print( '=== startup file loaded : %s ===' % ( ', '.join( loaded ) if len( loaded ) > 0 else '--' ) )
