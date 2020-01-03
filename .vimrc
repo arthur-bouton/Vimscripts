@@ -225,12 +225,36 @@ endfunction
 "" FZF ""{{{
 
 set rtp+=~/.fzf
-"let g:fzf_layout = { 'down': '~50%' }
-"let g:fzf_layout = { 'window': 'enew' }
 
 nnoremap <space>! :History<CR>
 nnoremap <space>: :BLines<CR>
 nnoremap <leader>e :FZF 
+nnoremap <leader>g :GitFiles<CR> 
+
+""}}}
+
+
+"" Git ""{{{
+
+command! -nargs=? GitShow silent call GitShow('<args>')
+
+function! GitShow(rev)
+	if !empty(a:rev)
+		let rev = a:rev
+	else
+		let file = '@'
+	endif
+
+	let file = @%
+	let pos = getpos('.')
+	let wd = getcwd()
+	execute 'edit /tmp/'.rev.':'.expand('%:t')
+
+	execute 'cd' wd
+	execute 'read !git show' rev.':./'.file
+	normal ggdd
+	call setpos('.', pos)
+endfunction
 
 ""}}}
 
