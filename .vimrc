@@ -52,10 +52,11 @@ set wildmenu
 set wildmode=longest,list,full
 set autochdir
 set virtualedit=block
-" Get back to the previous cursor position when reopening a file:
-if has("autocmd")
-  au BufReadPost * if line("'\"") > 0 && line("'\"") <= line("$") | exe "normal! g`\"" | endif
-endif
+" Restore the previous cursor position when reopening a file:
+autocmd BufReadPost * if line("'\"") > 0 && line("'\"") <= line("$") | exe "normal! g`\"" | endif
+" Restore the window position when switching buffers:
+autocmd BufLeave * let b:winview = winsaveview()
+autocmd BufEnter * if(exists('b:winview')) | call winrestview(b:winview) | endif
 
 " Shell "
 set shell=/bin/bash\ -i
