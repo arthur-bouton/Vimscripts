@@ -52,6 +52,10 @@ set wildmenu
 set wildmode=longest,list,full
 set autochdir
 set virtualedit=block
+" Get back to the previous cursor position when reopening a file:
+if has("autocmd")
+  au BufReadPost * if line("'\"") > 0 && line("'\"") <= line("$") | exe "normal! g`\"" | endif
+endif
 
 " Shell "
 set shell=/bin/bash\ -i
