@@ -58,18 +58,6 @@ set shell=/bin/bash\ -i
 
 ""}}}
 
-
-"" ConqueTerm ""{{{
-
-let g:ConqueTerm_SessionSupport = 1
-let g:ConqueTerm_CWInsert = 1
-let g:ConqueTerm_InsertOnEnter = 1
-let g:ConqueTerm_ReadUnfocused = 1
-let g:ConqueTerm_CloseOnEnd = 1
-"let g:ConqueTerm_Color = 0
-
-""}}}
-
  
 "" GUI ""{{{
 
@@ -99,6 +87,8 @@ end
 
 
 "" Raccourcis Généraux ""{{{
+
+let mapleader = 'è'
 
 inoremap jk <Esc>
 
@@ -226,6 +216,31 @@ endfunction
 ""}}}
 
 
+"" FZF ""{{{
+
+set rtp+=~/.fzf
+"let g:fzf_layout = { 'down': '~50%' }
+"let g:fzf_layout = { 'window': 'enew' }
+
+nnoremap <space>! :History<CR>
+nnoremap <space>: :BLines<CR>
+nnoremap <leader>e :FZF 
+
+""}}}
+
+
+"" ConqueTerm ""{{{
+
+let g:ConqueTerm_SessionSupport = 1
+let g:ConqueTerm_CWInsert = 1
+let g:ConqueTerm_InsertOnEnter = 1
+let g:ConqueTerm_ReadUnfocused = 1
+let g:ConqueTerm_CloseOnEnd = 1
+"let g:ConqueTerm_Color = 0
+
+""}}}
+
+
 "" Undo ""{{{
 
 if filewritable(expand(s:root_dir.'/undo')) == 2
@@ -271,7 +286,7 @@ nnoremap <Space><Space> :marks<CR>
 nnoremap <Space> `
 nnoremap <Space>, [`
 nnoremap <Space>; ]`
-nnoremap <Space>: :Delmark<CR>
+nnoremap <Space><BS> :Delmark<CR>
 
 command! Delmark call Delmark()
 
@@ -643,6 +658,8 @@ autocmd FileType lua let b:comment_char = '--'
 
 nnoremap <silent> é :call SwitchComment(1)<CR>
 vnoremap <silent> é :call SwitchComment(0)<CR>gv<Esc>
+nnoremap <silent> <leader>f :call Format()<CR>
+vnoremap <silent> <leader>f :call Format()<CR>gv<Esc>
 
 command! -range Comment <line1>,<line2> call Comment()
 command! -range UnComment <line1>,<line2> call UnComment()
