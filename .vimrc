@@ -126,10 +126,12 @@ vnoremap ç "+ygv<Esc>
 nnoremap à "+p
 vnoremap à "+p
 
+nnoremap <silent> £ :sh<CR>
+
 nnoremap <silent> ù :noh<CR>
 vnoremap <silent> ù :<C-u>call setreg('/',getreg('*'))<Bar>set hls<CR>gv<Esc>
 
-nnoremap <Space>! :redr!<CR>
+nnoremap <leader>r :redr!<CR>
 
 nnoremap <silent> <F8> :call SwitchList()<CR>
 inoremap <silent> <F8> <Esc>:call SwitchList()<CR>a
@@ -225,18 +227,6 @@ set rtp+=~/.fzf
 nnoremap <space>! :History<CR>
 nnoremap <space>: :BLines<CR>
 nnoremap <leader>e :FZF 
-
-""}}}
-
-
-"" ConqueTerm ""{{{
-
-let g:ConqueTerm_SessionSupport = 1
-let g:ConqueTerm_CWInsert = 1
-let g:ConqueTerm_InsertOnEnter = 1
-let g:ConqueTerm_ReadUnfocused = 1
-let g:ConqueTerm_CloseOnEnd = 1
-"let g:ConqueTerm_Color = 0
 
 ""}}}
 
