@@ -237,6 +237,7 @@ nnoremap <leader>g :GitFiles<CR>
 
 "" Git ""{{{
 
+" Open a previous git version of the current file:
 command! -nargs=? GitShow silent call GitShow('<args>')
 
 function! GitShow(rev)
@@ -256,6 +257,19 @@ function! GitShow(rev)
 	normal ggdd
 	call setpos('.', pos)
 endfunction
+
+" Syntax highlighting for git:
+augroup git_syntax
+    autocmd!
+	"autocmd Syntax * hi gitChunkMarker ctermfg=17 ctermbg=214 cterm=NONE guifg=#232a32 guibg=#ffb20d gui=NONE
+	"autocmd Syntax * hi gitChunkRef ctermfg=214 ctermbg=17 cterm=NONE guifg=#ffb20d guibg=#232a32 gui=NONE
+	autocmd Syntax * hi gitChunkMarker ctermfg=214 ctermbg=17 cterm=NONE guifg=#ffb20d guibg=#232a32 gui=NONE
+	autocmd Syntax * hi gitChunkRef ctermfg=202 ctermbg=17 cterm=NONE guifg=#ff410d guibg=#232a32 gui=NONE
+
+	autocmd Syntax * syntax region gitChunkRef matchgroup=gitChunkMarker start='\(^<<<<<<<\|^>>>>>>>\) ' end='$' containedin=ALL extend
+	autocmd Syntax * syntax match gitChunkMarker '^=======$' containedin=ALL extend
+augroup end
+set syntax+=
 
 ""}}}
 
