@@ -2,7 +2,7 @@ syntax sync fromstart
 
 syntax spell toplevel
 
-syntax match mytexComment '\\\@<!%.*$' containedin=ALL display
+syntax match mytexComment '\\\@<!%.*$' containedin=ALL
 
 syntax region mytexBraces start='{' end='}' contained transparent
 
