@@ -56,7 +56,7 @@ set virtualedit=block
 autocmd BufReadPost * if line("'\"") > 0 && line("'\"") <= line("$") | exe "normal! g`\"" | endif
 " Restore the window position when switching buffers:
 autocmd BufLeave * let b:winview = winsaveview()
-autocmd BufEnter * if(exists('b:winview')) | call winrestview(b:winview) | endif
+autocmd BufEnter * if exists('b:winview') | call winrestview(b:winview) | endif
 
 " Shell "
 set shell=/bin/bash\ -i
@@ -105,11 +105,11 @@ nnoremap <C-S-Tab> :tabp<CR>
 nnoremap <C-w>n :ene<CR>
 nnoremap <C-w><C-n> :ene<CR>
 
-nnoremap <Space>* :reg<CR>
+nnoremap ¨ :reg<CR>
 nnoremap <F9> :reg<CR>
-inoremap <F9> <Esc>:reg<CR>a
+inoremap <F9> <Esc>:reg<CR>
 nnoremap <F10> :marks<CR>
-inoremap <F10> <Esc>:marks<CR>a
+inoremap <F10> <Esc>:marks<CR>
 nnoremap § :browse oldfiles<CR>
 
 vnoremap < <gv
@@ -143,8 +143,11 @@ inoremap <silent> <F8> <Esc>:call SwitchList()<CR>a
 
 nnoremap <silent> g" :call EditReg()<CR>
 
+nnoremap <silent> µ :call HlSearch()<CR>
+
 nnoremap <silent> g= viW:call MathEdit()<CR>
 vnoremap <silent> g= :call MathEdit()<CR>
+
 
 function! SwitchList()
 	if &list == 0
@@ -155,6 +158,7 @@ function! SwitchList()
 		echo 'Masquage des caractères spéciaux'
 	endif
 endfunction
+
 
 function! EditReg()
 	echohl Title
@@ -180,6 +184,26 @@ endfunction
 function! RegCompletion(ArgLead, CmdLine, CursorPos)
 	return getreg(s:edited_reg)
 endfunction
+
+
+" Search and highlight but don't jump to the next match:
+function! HlSearch()
+	echohl StatusLineNC
+	let input = input(' / ', '', 'custom,SearchCompletion')
+	echohl None
+	if !empty(input)
+		let @/=input
+		call feedkeys(":set hls\<CR>:echo '/".input."'\<CR>")
+	else
+		redraw
+		echo ''
+	endif
+endfunction
+
+function! SearchCompletion(ArgLead, CmdLine, CursorPos)
+	return getreg('/')
+endfunction
+
 
 function! MathEdit()
 	let value = getreg('*')
