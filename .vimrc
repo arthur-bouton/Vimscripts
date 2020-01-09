@@ -71,6 +71,7 @@ if has('gui_running')
 
 	try
 		colorscheme Mytheme
+		set cursorline
 	catch
 	endtry
 
@@ -106,10 +107,6 @@ nnoremap <C-w>n :ene<CR>
 nnoremap <C-w><C-n> :ene<CR>
 
 nnoremap ¨ :reg<CR>
-nnoremap <F9> :reg<CR>
-inoremap <F9> <Esc>:reg<CR>
-nnoremap <F10> :marks<CR>
-inoremap <F10> <Esc>:marks<CR>
 nnoremap § :browse oldfiles<CR>
 
 vnoremap < <gv
@@ -140,6 +137,15 @@ nnoremap <leader>r :redr!<CR>
 
 nnoremap <silent> <F8> :call SwitchList()<CR>
 inoremap <silent> <F8> <Esc>:call SwitchList()<CR>a
+vnoremap <silent> <F8> <Esc>:call SwitchList()<CR>gv
+
+nnoremap <silent> <F9> :call SwitchCursorLine()<CR>
+inoremap <silent> <F9> <Esc>:call SwitchCursorLine()<CR>a
+vnoremap <silent> <F9> <Esc>:call SwitchCursorLine()<CR>gv
+
+nnoremap <silent> <F10> :call SwitchCursorColumn()<CR>
+inoremap <silent> <F10> <Esc>:call SwitchCursorColumn()<CR>a
+vnoremap <silent> <F10> <Esc>:call SwitchCursorColumn()<CR>gv
 
 nnoremap <silent> g" :call EditReg()<CR>
 
@@ -156,6 +162,24 @@ function! SwitchList()
 	else
 		set nolist
 		echo 'Masquage des caractères spéciaux'
+	endif
+endfunction
+
+
+function! SwitchCursorLine()
+	if &cursorline == 0
+		set cursorline
+	else
+		set nocursorline
+	endif
+endfunction
+
+
+function! SwitchCursorColumn()
+	if &cursorcolumn == 0
+		set cursorcolumn
+	else
+		set nocursorcolumn
 	endif
 endfunction
 

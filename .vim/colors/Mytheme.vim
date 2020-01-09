@@ -12,8 +12,9 @@ let g:colors_name = 'Mytheme'
 
 hi Cursor ctermfg=NONE ctermbg=231 cterm=NONE guifg=NONE guibg=#0F4999 gui=NONE
 hi Visual ctermfg=NONE ctermbg=23 cterm=NONE guifg=NONE guibg=#183c66 gui=NONE
-hi CursorLine ctermfg=NONE ctermbg=17 cterm=NONE guifg=NONE guibg=#232a32 gui=NONE
+hi CursorLine ctermfg=NONE ctermbg=NONE cterm=NONE guifg=NONE guibg=NONE gui=NONE
 hi CursorColumn ctermfg=NONE ctermbg=17 cterm=NONE guifg=NONE guibg=#232a32 gui=NONE
+hi CursorLineNR ctermfg=214 ctermbg=17 cterm=NONE guifg=#ffb20d guibg=#232a32 gui=NONE
 hi ColorColumn ctermfg=NONE ctermbg=17 cterm=NONE guifg=NONE guibg=#232a32 gui=NONE
 hi LineNr ctermfg=60 ctermbg=17 cterm=NONE guifg=#616e80 guibg=#232a32 gui=NONE
 hi VertSplit ctermfg=59 ctermbg=59 cterm=NONE guifg=#414a57 guibg=#414a57 gui=NONE
