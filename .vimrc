@@ -133,6 +133,9 @@ nnoremap <silent> £ :sh<CR>
 nnoremap <silent> ù :noh<CR>
 vnoremap <silent> ù :<C-u>call setreg('/',getreg('*'))<Bar>set hls<CR>gv<Esc>
 
+nnoremap vv viw
+vnoremap <silent> v <Esc>:call VisualViW()<CR>
+
 nnoremap <leader>r :redr!<CR>
 
 nnoremap <silent> <F8> :call SwitchList()<CR>
@@ -153,6 +156,15 @@ nnoremap <silent> µ :call HlSearch()<CR>
 
 nnoremap <silent> g= viW:call MathEdit()<CR>
 vnoremap <silent> g= :call MathEdit()<CR>
+
+
+function! VisualViW()
+	if match( getreg('*'), ' \|\t\|\n' ) == -1
+		if index( [ ' ', '	' ], getline('.')[getpos("'<")[2]-2] ) == -1 || index( [ ' ', '	', '' ], getline('.')[getpos("'>")[2]] ) == -1
+			normal! viW
+		endif
+	endif
+endfunction
 
 
 function! SwitchList()
