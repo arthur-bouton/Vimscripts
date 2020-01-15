@@ -52,13 +52,45 @@ set wildmenu
 set wildmode=longest,list,full
 set autochdir
 set virtualedit=block
+set nojoinspaces
+
 " Restore the previous cursor position when reopening a file:
-autocmd BufReadPost * if line("'\"") > 0 && line("'\"") <= line("$") | exe "normal! g`\"" | endif
-" Restore the window position when switching buffers:
-autocmd BufLeave * let b:winview = winsaveview()
-autocmd BufEnter * if exists('b:winview') | call winrestview(b:winview) | endif
+augroup restore_cursor_position
+	autocmd!
+	autocmd BufReadPost * if line("'\"") > 0 && line("'\"") <= line('$') | exe 'normal! g`"' | endif
+augroup end
+
+" Remember the window position when switching buffers:
+augroup remember_view
+	autocmd!
+    autocmd BufLeave * call AutoSaveWinView()
+    autocmd BufEnter * call AutoRestoreWinView()
+augroup end
+
+function! AutoSaveWinView()
+    if !exists("w:SavedBufView")
+        let w:SavedBufView = {}
+    endif
+    let w:SavedBufView[bufnr("%")] = winsaveview()
+endfunction
+
+function! AutoRestoreWinView()
+    let buf = bufnr("%")
+    if exists("w:SavedBufView") && has_key(w:SavedBufView, buf)
+        let v = winsaveview()
+        let atStartOfFile = v.lnum == 1 && v.col == 0
+        if atStartOfFile && !&diff
+            call winrestview(w:SavedBufView[buf])
+        endif
+        unlet w:SavedBufView[buf]
+    endif
+endfunction
+
 " Open help windows in a left pane:
-autocmd FileType help wincmd L
+augroup open_help_windows
+	autocmd!
+	autocmd FileType help wincmd L
+augroup end
 
 " Shell "
 set shell=/bin/bash\ -i
@@ -117,6 +149,7 @@ vnoremap < <gv
 vnoremap > >gv
 
 nnoremap Y y$
+nnoremap <C-p> D"0p
 
 noremap gV `[v`]
 
@@ -145,13 +178,13 @@ nnoremap <silent> <F8> :call SwitchList()<CR>
 inoremap <silent> <F8> <Esc>:call SwitchList()<CR>a
 vnoremap <silent> <F8> <Esc>:call SwitchList()<CR>gv
 
-nnoremap <silent> <F9> :call SwitchCursorLine()<CR>
-inoremap <silent> <F9> <Esc>:call SwitchCursorLine()<CR>a
-vnoremap <silent> <F9> <Esc>:call SwitchCursorLine()<CR>gv
+nnoremap <silent> <F9> :set cursorline!<CR>
+inoremap <silent> <F9> <Esc>:set cursorline!<CR>a
+vnoremap <silent> <F9> <Esc>:set cursorline!<CR>gv
 
-nnoremap <silent> <F10> :call SwitchCursorColumn()<CR>
-inoremap <silent> <F10> <Esc>:call SwitchCursorColumn()<CR>a
-vnoremap <silent> <F10> <Esc>:call SwitchCursorColumn()<CR>gv
+nnoremap <silent> <F10> :set cursorcolumn!<CR>
+inoremap <silent> <F10> <Esc>:set cursorcolumn!<CR>a
+vnoremap <silent> <F10> <Esc>:set cursorcolumn!<CR>gv
 
 nnoremap <silent> g" :call EditReg()<CR>
 
@@ -177,24 +210,6 @@ function! SwitchList()
 	else
 		set nolist
 		echo 'Masquage des caractères spéciaux'
-	endif
-endfunction
-
-
-function! SwitchCursorLine()
-	if &cursorline == 0
-		set cursorline
-	else
-		set nocursorline
-	endif
-endfunction
-
-
-function! SwitchCursorColumn()
-	if &cursorcolumn == 0
-		set cursorcolumn
-	else
-		set nocursorcolumn
 	endif
 endfunction
 
@@ -328,53 +343,12 @@ endfunction
 ""}}}
 
 
-"" FZF ""{{{
+"" Fenêtres ""{{{
 
-set rtp+=~/.fzf
-
-nnoremap <space>! :History<CR>
-nnoremap <space>: :BLines<CR>
-nnoremap <leader>e :FZF 
-nnoremap <leader>g :GitFiles<CR> 
-
-""}}}
-
-
-"" Git ""{{{
-
-" Open a previous git version of the current file:
-command! -nargs=? GitShow silent call GitShow('<args>')
-
-function! GitShow(rev)
-	if !empty(a:rev)
-		let rev = a:rev
-	else
-		let file = '@'
-	endif
-
-	let file = @%
-	let pos = getpos('.')
-	let wd = getcwd()
-	execute 'edit /tmp/'.rev.':'.expand('%:t')
-
-	execute 'cd' wd
-	execute 'read !git show' rev.':./'.file
-	normal ggdd
-	call setpos('.', pos)
-endfunction
-
-" Syntax highlighting for git:
-augroup git_syntax
-    autocmd!
-	"autocmd Syntax * hi gitChunkMarker ctermfg=17 ctermbg=214 cterm=NONE guifg=#232a32 guibg=#ffb20d gui=NONE
-	"autocmd Syntax * hi gitChunkRef ctermfg=214 ctermbg=17 cterm=NONE guifg=#ffb20d guibg=#232a32 gui=NONE
-	autocmd Syntax * hi gitChunkMarker ctermfg=214 ctermbg=17 cterm=NONE guifg=#ffb20d guibg=#232a32 gui=NONE
-	autocmd Syntax * hi gitChunkRef ctermfg=202 ctermbg=17 cterm=NONE guifg=#ff410d guibg=#232a32 gui=NONE
-
-	autocmd Syntax * syntax region gitChunkRef matchgroup=gitChunkMarker start='\(^<<<<<<<\|^>>>>>>>\) ' end='$' containedin=ALL extend
-	autocmd Syntax * syntax match gitChunkMarker '^=======$' containedin=ALL extend
-augroup end
-set syntax+=
+nnoremap <C-Left> <C-w><
+nnoremap <C-Right> <C-w>>
+nnoremap <C-Up> <C-w>+
+nnoremap <C-Down> <C-w>-
 
 ""}}}
 
@@ -388,6 +362,7 @@ endif
 
 inoremap <C-_> <C-o>u
 
+" Define keys that start a new undoable edit:
 inoremap <Space> <Space><C-g>u
 inoremap <CR> <C-g>u<CR>
 inoremap <C-r> <C-g>u<C-r>
@@ -403,106 +378,6 @@ function! ClearUndo()
 	execute 'normal! a '
 	let &undolevels = old_undolevels
 	unlet old_undolevels
-endfunction
-
-""}}}
-
-
-"" Fichiers Textes ""{{{
-
-nnoremap <buffer> !I (a
-nnoremap <buffer> !A :call Appendtext()<CR>a
-
-nnoremap <buffer> !yy (y)
-nnoremap <buffer> !dd (d)
-nnoremap <buffer> !Y y)
-nnoremap <buffer> !D d)
-nnoremap <buffer> !C c)
-nnoremap <buffer> !S (c)
-
-autocmd FileType text call Textfile_mapping()
-
-function! Textfile_mapping()
-	setlocal wrap linebreak nolist
-
-	nnoremap <buffer> j gj
-	nnoremap <buffer> k gk
-	nnoremap <buffer> <Down> gj
-	nnoremap <buffer> <Up> gk
-	nnoremap <buffer> 0 g0
-	nnoremap <buffer> ^ g^
-	nnoremap <buffer> $ g$
-
-	inoremap <buffer> <C-h> <Esc>(a
-	inoremap <buffer> <C-l> <Esc>:call Appendtext()<CR>a
-	
-	inoremap <buffer> <C-u> <C-g>u<C-o>d(
-endfunction
-
-function! Appendtext()
-	let initpos = getpos('.')
-	normal! 2l
-	if getpos('.')[2] == initpos[2]
-		normal! +
-	endif
-	let initpos = getpos('.')
-	normal! )
-	if getpos('.')[1] != initpos[1]
-		call setpos('.', initpos)
-		normal! $
-	elseif getpos('.')[1] != line('$') && getpos('.')[2] != strlen(getline('.'))
-		normal! 2h
-	endif
-endfunction
-
-""}}}
-
-
-"" Fenêtres ""{{{
-
-nnoremap <C-Left> <C-w><
-nnoremap <C-Right> <C-w>>
-nnoremap <C-Up> <C-w>+
-nnoremap <C-Down> <C-w>-
-
-""}}}
-
-
-"" Correction Orthographique ""{{{
-
-nnoremap <F6> :SpellEn<CR>
-nnoremap <F7> :SpellFr<CR>
-
-inoremap <F6> <Esc>:SpellEn<CR>a
-inoremap <F7> <Esc>:SpellFr<CR>a
-
-command! SpellFr call SpellFr()
-command! SpellEn call SpellEn()
-
-let g:languagetool_jar = '~/Bin/LanguageTool-3.0/languagetool-commandline.jar'
-
-function! SpellFr()
-	if &spell==0 || &spelllang!='fr'
-		setlocal spelllang=fr spell
-		echo 'Correction orthographique française activée'
-		let b:lang = '[fr]'
-	else
-		setlocal nospell
-		echo 'Correction orthographique désactivée'
-		let b:lang = ''
-	endif
-endfunction
-
-function! SpellEn()
-	if &spell==0 || &spelllang!='en'
-		setlocal spelllang=en spell
-		echo 'Correction orthographique anglaise activée'
-		let b:lang = '[en]'
-	else
-		setlocal nospell
-		echo 'Correction orthographique désactivée'
-		let b:lang = ''
-	endif
 endfunction
 
 ""}}}
@@ -593,13 +468,16 @@ endfunction
 
 "" Gestion des Sessions ""{{{
 
-set sessionoptions=curdir,options,localoptions,globals,folds,winsize,blank,buffers,help,tabpages
+set sessionoptions=curdir,buffers,winsize,folds,blank,help,tabpages,options,localoptions,globals
 
 let g:sessions_path = s:root_dir.'/sessions/'
-let g:default_session = '.last'
+let g:default_session = '.latest'
 let s:current_session = g:default_session
 
-autocmd VimLeave * execute 'mksession!' g:sessions_path.g:default_session
+augroup autosave_session
+	autocmd!
+	autocmd VimLeave * execute 'mksession!' g:sessions_path.g:default_session
+augroup end
 
 command! RestoreSession call RestoreSession()
 command! -bang -nargs=* -complete=customlist,FileCompletion NewSession call NewSession(<bang>0, '<args>')
@@ -718,13 +596,53 @@ let g:netrw_browsex_viewer = 'kde-open'
 ""}}}
 
 
-"" Coloration Syntaxtique ""{{{
+"" Fichiers Textes ""{{{
 
-nmap <F5> :call SynStack()<CR>
+nnoremap <buffer> !I (a
+nnoremap <buffer> !A :call Appendtext()<CR>a
 
-function! SynStack()
-	if exists('*synstack')
-		echo map(synstack(line('.'), col('.')), 'synIDattr(v:val, "name")')
+nnoremap <buffer> !yy (y)
+nnoremap <buffer> !dd (d)
+nnoremap <buffer> !Y y)
+nnoremap <buffer> !D d)
+nnoremap <buffer> !C c)
+nnoremap <buffer> !S (c)
+
+augroup text_mode
+	autocmd!
+	autocmd FileType text call Load_text_mode()
+augroup end
+
+function! Load_text_mode()
+	setlocal wrap linebreak nolist
+
+	nnoremap <buffer> j gj
+	nnoremap <buffer> k gk
+	nnoremap <buffer> <Down> gj
+	nnoremap <buffer> <Up> gk
+	nnoremap <buffer> 0 g0
+	nnoremap <buffer> ^ g^
+	nnoremap <buffer> $ g$
+
+	inoremap <buffer> <C-h> <Esc>(a
+	inoremap <buffer> <C-l> <Esc>:call Appendtext()<CR>a
+	
+	inoremap <buffer> <C-u> <C-g>u<C-o>d(
+endfunction
+
+function! Appendtext()
+	let initpos = getpos('.')
+	normal! 2l
+	if getpos('.')[2] == initpos[2]
+		normal! +
+	endif
+	let initpos = getpos('.')
+	normal! )
+	if getpos('.')[1] != initpos[1]
+		call setpos('.', initpos)
+		normal! $
+	elseif getpos('.')[1] != line('$') && getpos('.')[2] != strlen(getline('.'))
+		normal! 2h
 	endif
 endfunction
 
@@ -737,20 +655,23 @@ set iskeyword+=:
 
 set foldlevelstart=99
 
-autocmd FileType vim setlocal foldmethod=marker
-autocmd FileType python setlocal foldmethod=indent
-autocmd FileType python nnoremap gt oimport pdb; pdb.set_trace()<esc>
-"Ignore boost librairies for autocompletion:
-autocmd FileType c,cpp,sh,arduino setlocal include=^\\s*#\\s*include\ \\(<boost/\\)\\@!
-autocmd FileType c,cpp,sh,arduino setlocal foldmethod=marker | set foldmarker={,}
-autocmd FileType c,cpp,arduino set iskeyword+=:
-autocmd FileType tex setlocal foldmethod=marker
+augroup ide_config
+	autocmd!
+	autocmd FileType vim setlocal foldmethod=marker | set foldmarker={{{,}}}
+	autocmd FileType python setlocal foldmethod=indent
+	autocmd FileType python nnoremap gt oimport pdb; pdb.set_trace()<esc>
+	"Ignore boost librairies for autocompletion:
+	autocmd FileType c,cpp,sh,arduino setlocal include=^\\s*#\\s*include\ \\(<boost/\\)\\@!
+	autocmd FileType c,cpp,sh,arduino setlocal foldmethod=marker | set foldmarker={,}
+	autocmd FileType c,cpp,arduino set iskeyword+=:
+	autocmd FileType tex setlocal foldmethod=marker
 
-autocmd FileType vim let b:comment_char = '"'
-autocmd FileType sh,python,conf,make,cmake let b:comment_char = '#'
-autocmd FileType c,cpp,arduino let b:comment_char = '//'
-autocmd FileType tex,plaintex,matlab let b:comment_char = '%'
-autocmd FileType lua let b:comment_char = '--'
+	autocmd FileType vim let b:comment_char = '"'
+	autocmd FileType sh,python,conf,make,cmake let b:comment_char = '#'
+	autocmd FileType c,cpp,arduino let b:comment_char = '//'
+	autocmd FileType tex,plaintex,matlab let b:comment_char = '%'
+	autocmd FileType lua let b:comment_char = '--'
+augroup end
 
 nnoremap <silent> é :call SwitchComment(1)<CR>
 vnoremap <silent> é :call SwitchComment(0)<CR>gv<Esc>
@@ -834,26 +755,18 @@ endfunction
 ""}}}
 
 
-"" Tabular ""{{{
-
-autocmd FileType * if exists(':AddTabularPattern')==2 | call AllTypeTabPattern() | endif
-
-function! AllTypeTabPattern()
-	AddTabularPattern! align_last /\S*$
-endfunction
-
-""}}}
-
-
 "" LaTeX ""{{{
 
-autocmd FileType tex,plaintex call LoadLatexUtilities()
+augroup latex_mode
+	autocmd!
+	autocmd FileType tex,plaintex call Load_latex_mode()
+augroup end
 
-function! LoadLatexUtilities()
+function! Load_latex_mode()
 
 	let s:auxdir = 'auxfiles'
 
-	call Textfile_mapping()
+	call Load_text_mode()
 
 	if filereadable(expand(s:root_dir.'/syntax/latex.vim'))
 		set syntax=latex
@@ -1025,6 +938,124 @@ function! LoadLatexUtilities()
 		endif
 	endfunction
 
+endfunction
+
+""}}}
+
+
+"" Correction Orthographique ""{{{
+
+nnoremap <F6> :SpellEn<CR>
+nnoremap <F7> :SpellFr<CR>
+
+inoremap <F6> <Esc>:SpellEn<CR>a
+inoremap <F7> <Esc>:SpellFr<CR>a
+
+command! SpellFr call SpellFr()
+command! SpellEn call SpellEn()
+
+let g:languagetool_jar = '~/Bin/LanguageTool-3.0/languagetool-commandline.jar'
+
+function! SpellFr()
+	if &spell==0 || &spelllang!='fr'
+		setlocal spelllang=fr spell
+		echo 'Correction orthographique française activée'
+		let b:lang = '[fr]'
+	else
+		setlocal nospell
+		echo 'Correction orthographique désactivée'
+		let b:lang = ''
+	endif
+endfunction
+
+function! SpellEn()
+	if &spell==0 || &spelllang!='en'
+		setlocal spelllang=en spell
+		echo 'Correction orthographique anglaise activée'
+		let b:lang = '[en]'
+	else
+		setlocal nospell
+		echo 'Correction orthographique désactivée'
+		let b:lang = ''
+	endif
+endfunction
+
+""}}}
+
+
+"" Coloration Syntaxtique ""{{{
+
+nmap <F5> :call SynStack()<CR>
+
+function! SynStack()
+	if exists('*synstack')
+		echo map(synstack(line('.'), col('.')), 'synIDattr(v:val, "name")')
+	endif
+endfunction
+
+""}}}
+
+
+"" Git ""{{{
+
+" Open a previous git version of the current file:
+command! -nargs=? GitShow silent call GitShow('<args>')
+
+function! GitShow(rev)
+	if !empty(a:rev)
+		let rev = a:rev
+	else
+		let file = '@'
+	endif
+
+	let file = @%
+	let pos = getpos('.')
+	let wd = getcwd()
+	execute 'edit /tmp/'.rev.':'.expand('%:t')
+
+	execute 'cd' wd
+	execute 'read !git show' rev.':./'.file
+	normal ggdd
+	call setpos('.', pos)
+endfunction
+
+" Syntax highlighting for git:
+augroup git_syntax
+    autocmd!
+	"autocmd Syntax * hi gitChunkMarker ctermfg=17 ctermbg=214 cterm=NONE guifg=#232a32 guibg=#ffb20d gui=NONE
+	"autocmd Syntax * hi gitChunkRef ctermfg=214 ctermbg=17 cterm=NONE guifg=#ffb20d guibg=#232a32 gui=NONE
+	autocmd Syntax * hi gitChunkMarker ctermfg=214 ctermbg=17 cterm=NONE guifg=#ffb20d guibg=#232a32 gui=NONE
+	autocmd Syntax * hi gitChunkRef ctermfg=202 ctermbg=17 cterm=NONE guifg=#ff410d guibg=#232a32 gui=NONE
+
+	autocmd Syntax * syntax region gitChunkRef matchgroup=gitChunkMarker start='\(^<<<<<<<\|^>>>>>>>\) ' end='$' containedin=ALL extend
+	autocmd Syntax * syntax match gitChunkMarker '^=======$' containedin=ALL extend
+augroup end
+set syntax+=
+
+""}}}
+
+
+"" FZF ""{{{
+
+set rtp+=~/.fzf
+
+nnoremap <space>! :History<CR>
+nnoremap <space>: :BLines<CR>
+nnoremap <leader>e :FZF 
+nnoremap <leader>g :GitFiles<CR> 
+
+""}}}
+
+
+"" Tabular ""{{{
+
+augroup tabular_config
+	autocmd!
+	autocmd FileType * if exists(':AddTabularPattern') == 2 | call AllTypeTabPattern() | endif
+augroup end
+
+function! AllTypeTabPattern()
+	AddTabularPattern! align_last /\S*$
 endfunction
 
 ""}}}
