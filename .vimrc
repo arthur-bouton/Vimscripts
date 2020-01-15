@@ -57,6 +57,8 @@ autocmd BufReadPost * if line("'\"") > 0 && line("'\"") <= line("$") | exe "norm
 " Restore the window position when switching buffers:
 autocmd BufLeave * let b:winview = winsaveview()
 autocmd BufEnter * if exists('b:winview') | call winrestview(b:winview) | endif
+" Open help windows in a left pane:
+autocmd FileType help wincmd L
 
 " Shell "
 set shell=/bin/bash\ -i
@@ -107,6 +109,8 @@ nnoremap <C-w>n :ene<CR>
 nnoremap <C-w><C-n> :ene<CR>
 
 nnoremap ¨ :reg<CR>
+inoremap ¨ <ESC>:reg<CR>
+
 nnoremap § :browse oldfiles<CR>
 
 vnoremap < <gv
@@ -114,8 +118,7 @@ vnoremap > >gv
 
 nnoremap Y y$
 
-inoremap <C-k> <C-g>u<C-o>C
-inoremap <Insert> <C-k>
+noremap gV `[v`]
 
 vnoremap y ygv<Esc>
 vnoremap p pgv<Esc>
@@ -128,15 +131,15 @@ vnoremap ç "+ygv<Esc>
 nnoremap à "+p
 vnoremap à "+p
 
-nnoremap <silent> £ :sh<CR>
-
 nnoremap <silent> ù :noh<CR>
 vnoremap <silent> ù :<C-u>call setreg('/',getreg('*'))<Bar>set hls<CR>gv<Esc>
 
+nnoremap <leader>r :redr!<CR>
+
+nnoremap <silent> <space>$ :sh<CR>
+
 nnoremap vv viw
 vnoremap <silent> v <Esc>:call VisualViW()<CR>
-
-nnoremap <leader>r :redr!<CR>
 
 nnoremap <silent> <F8> :call SwitchList()<CR>
 inoremap <silent> <F8> <Esc>:call SwitchList()<CR>a
@@ -152,7 +155,7 @@ vnoremap <silent> <F10> <Esc>:call SwitchCursorColumn()<CR>gv
 
 nnoremap <silent> g" :call EditReg()<CR>
 
-nnoremap <silent> µ :call HlSearch()<CR>
+nnoremap <silent> <space>* :call HlSearch()<CR>
 
 nnoremap <silent> g= viW:call MathEdit()<CR>
 vnoremap <silent> g= :call MathEdit()<CR>
@@ -283,6 +286,48 @@ endfunction
 ""}}}
 
 
+"" Déplacements ""{{{
+
+nnoremap <C-j> 3j
+nnoremap <C-k> 3k
+nnoremap <C-h> 10h
+nnoremap <C-l> 10l
+
+inoremap <C-j> <Esc>gEa
+inoremap <C-k> <Esc>Ea
+inoremap <C-h> <Esc>I
+inoremap <C-l> <Esc>A
+
+nnoremap <Space><Space> :marks<CR>
+nnoremap <Space> `
+nnoremap £ [`
+nnoremap µ ]`
+nnoremap <Space><BS> :Delmark<CR>
+
+command! Delmark call Delmark()
+
+function Delmark()
+	marks
+	echohl Title | echo '-- Selectionnez une marque à supprimer --' | echohl None
+	let char = nr2char(getchar())
+	if char == '' || char == ' ' || char == '' || char == ''
+		redraw
+		echo 'Annulé'
+		return
+	endif
+	try
+		execute 'delmarks' char
+		redraw
+		echo 'Marque' char 'supprimée'
+	catch
+		redraw
+		echo 'Mauvaise saisie !'
+	endtry
+endfunction
+
+""}}}
+
+
 "" FZF ""{{{
 
 set rtp+=~/.fzf
@@ -358,48 +403,6 @@ function! ClearUndo()
 	execute 'normal! a '
 	let &undolevels = old_undolevels
 	unlet old_undolevels
-endfunction
-
-""}}}
-
-
-"" Déplacements ""{{{
-
-nnoremap <C-j> 10j
-nnoremap <C-k> 10k
-nnoremap <C-h> 30h
-nnoremap <C-l> 30l
-
-inoremap <C-j> <Esc>BBviWva
-inoremap <C-k> <Esc>Ea
-inoremap <C-h> <Esc>I
-inoremap <C-l> <Esc>A
-
-nnoremap <Space><Space> :marks<CR>
-nnoremap <Space> `
-nnoremap <Space>, [`
-nnoremap <Space>; ]`
-nnoremap <Space><BS> :Delmark<CR>
-
-command! Delmark call Delmark()
-
-function Delmark()
-	marks
-	echohl Title | echo '-- Selectionnez une marque à supprimer --' | echohl None
-	let char = nr2char(getchar())
-	if char == ' ' || char == '' || char == ''
-		redraw
-		echo 'Annulé'
-		return
-	endif
-	try
-		execute 'delmarks' char
-		redraw
-		echo 'Marque' char 'supprimée'
-	catch
-		redraw
-		echo 'Mauvaise saisie !'
-	endtry
 endfunction
 
 ""}}}
