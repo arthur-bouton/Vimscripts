@@ -42,6 +42,7 @@ set softtabstop=4
 set shiftwidth=4
 
 " Comportement "
+set nocompatible
 set shortmess+=I
 if filewritable(expand(s:root_dir.'/swap')) == 2
 	execute 'set directory='.s:root_dir.'/swap'
@@ -167,6 +168,14 @@ vnoremap à "+p
 nnoremap <silent> ù :noh<CR>
 vnoremap <silent> ù :<C-u>call setreg('/',getreg('*'))<Bar>set hls<CR>gv<Esc>
 
+" Complete with file and directory names if the previous character is '/':
+inoremap <expr> <C-Space> getline('.')[col('.')-2] == '/' ? '<C-x><C-f>' : '<Space>'
+
+" Tags:
+nnoremap <leader>t <C-]>
+nnoremap g<leader>t g<C-]>
+inoremap <C-x><leader>t <C-x><C-]>
+
 nnoremap <leader>r :redr!<CR>
 
 nnoremap <silent> <space>$ :sh<CR>
@@ -195,8 +204,8 @@ vnoremap <silent> g= :call MathEdit()<CR>
 
 
 function! VisualViW()
-	if match( getreg('*'), ' \|\t\|\n' ) == -1
-		if index( [ ' ', '	' ], getline('.')[getpos("'<")[2]-2] ) == -1 || index( [ ' ', '	', '' ], getline('.')[getpos("'>")[2]] ) == -1
+	if match( getreg('*'), '[ \t\n]' ) == -1
+		if index( [ ' ', '	', '' ], getline('.')[getpos("'<")[2]-2] ) == -1 || index( [ ' ', '	', '' ], getline('.')[getpos("'>")[2]] ) == -1
 			normal! viW
 		endif
 	endif
@@ -363,7 +372,6 @@ endif
 inoremap <C-_> <C-o>u
 
 " Define keys that start a new undoable edit:
-inoremap <Space> <Space><C-g>u
 inoremap <CR> <C-g>u<CR>
 inoremap <C-r> <C-g>u<C-r>
 inoremap <C-w> <C-g>u<C-w>
@@ -943,6 +951,19 @@ endfunction
 ""}}}
 
 
+"" Coloration Syntaxtique ""{{{
+
+nmap <F5> :call SynStack()<CR>
+
+function! SynStack()
+	if exists('*synstack')
+		echo map(synstack(line('.'), col('.')), 'synIDattr(v:val, "name")')
+	endif
+endfunction
+
+""}}}
+
+
 "" Correction Orthographique ""{{{
 
 nnoremap <F6> :SpellEn<CR>
@@ -977,19 +998,6 @@ function! SpellEn()
 		setlocal nospell
 		echo 'Correction orthographique désactivée'
 		let b:lang = ''
-	endif
-endfunction
-
-""}}}
-
-
-"" Coloration Syntaxtique ""{{{
-
-nmap <F5> :call SynStack()<CR>
-
-function! SynStack()
-	if exists('*synstack')
-		echo map(synstack(line('.'), col('.')), 'synIDattr(v:val, "name")')
 	endif
 endfunction
 
@@ -1042,7 +1050,7 @@ set rtp+=~/.fzf
 nnoremap <space>! :History<CR>
 nnoremap <space>: :BLines<CR>
 nnoremap <leader>e :FZF 
-nnoremap <leader>g :GitFiles<CR> 
+nnoremap <leader>g :GitFiles<CR>
 
 ""}}}
 
