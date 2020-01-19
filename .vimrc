@@ -224,7 +224,7 @@ endfunction
 
 
 function! EditReg()
-	echohl Title
+	echohl Question
 	echo '-- Selectionnez un registre --'
 	let s:edited_reg = nr2char(getchar())
 	redraw
@@ -393,10 +393,9 @@ endfunction
 
 "" Gestion des Tampons ""{{{
 
-nnoremap <Space><Tab> :ls<CR>
-
-nnoremap <Tab> :bn<CR>
-nnoremap <S-Tab> :bp<CR>
+"nnoremap <Space><Tab> :ls<CR>
+"nnoremap <Tab> :bn<CR>
+"nnoremap <S-Tab> :bp<CR>
 
 nnoremap <C-s> :Bv<CR>
 
@@ -469,6 +468,203 @@ function! SaveAs(bang, newfile)
         execute 'edit' a:newfile
         execute 'bdelete! #'
     endif
+endfunction
+
+
+" Buffer workspaces "
+
+nnoremap <silent> <Space><Tab> :BufWorkspaces<CR>
+nnoremap <silent> <Tab> :NextBuffer<CR>
+nnoremap <silent> <S-Tab> :PrevBuffer<CR>
+
+command! BufWorkspaces call s:BufWorkspaces()
+command! NextBuffer exe 'b' s:GetNextBuffer( bufnr('%') )
+command! PrevBuffer exe 'b' s:GetPrevBuffer( bufnr('%') )
+
+let s:bws_list = []
+
+function! s:BufWorkspaces()
+	call s:PrintWorkspaces()
+
+	let ws_count = s:GetWorkspaceCount()
+	let current_ws = s:GetBufferWorkspace( bufnr('%') )
+	let prev_ws_buf = s:GetPrevBuffer( bufnr('%') )
+
+	if ws_count > 1
+		echo ' [1-'.ws_count."]: change buffer's ws    "
+	else
+		echo ' '
+	endif
+	echon ws_count + 1.': create ws    n: next ws    p: prev ws    D: delete all ws    b: open buffer'
+	echohl Question | echo '-- Enter a command or any other key to cancel --' | echohl None
+	let answer = nr2char(getchar())
+	if answer == 'n'
+		redraw
+		if ws_count == 1 | return | endif
+		execute 'buffer' min( s:GetNextWorkspace( current_ws ) )
+	elseif answer == 'p'
+		redraw
+		if ws_count == 1 | return | endif
+		execute 'buffer' min( s:GetPrevWorkspace( current_ws ) )
+	elseif match( answer, '[1-9]' ) != -1
+		if answer > ws_count + 1
+			redraw | echohl Error | echo 'Wrong workspace number' | echohl None
+		elseif answer == current_ws
+			redraw | echo 'The buffer' bufnr('%') 'is already in workspace' answer
+		elseif answer == ws_count + 1
+			if s:GetBufferCount( current_ws ) < 2
+				redraw | echo 'The buffer' bufnr('%') 'is the only buffer in workspace' current_ws
+			else
+				" Create a new workspace with the current buffer:
+				call s:CreateWorkspace( bufnr('%') )
+				execute 'buffer' prev_ws_buf
+				redraw | echomsg 'New workspace created with buffer' bufnr('%')
+			endif
+		else
+			" Move the current buffer to the given workspace number:
+			call s:MoveBufferToWorkspace( bufnr('%'), answer )
+			execute 'buffer' prev_ws_buf
+			redraw | echomsg 'The buffer' bufnr('%') 'has been moved to the workspace' answer
+		endif
+	elseif answer == 'D'
+		let s:bws_list = []
+		redraw | echomsg 'All the workspaces have been deleted'
+	elseif answer == 'b'
+		redrawstatus
+		call s:PrintWorkspaces()
+		echohl Title | let buf = input( ':b ', '', 'buffer' ) | echohl None
+		execute 'buffer' buf
+	else
+		redrawstatus
+	endif
+endfunction
+
+function! s:GetWorkspaceCount()
+	return len(s:bws_list) + 1
+endfunction
+
+function! s:GetBufferCount( workspace )
+	return len(s:GetBufferList( a:workspace ))
+endfunction
+
+function! s:PrintWorkspaces()
+	for workspace in range( 1, s:GetWorkspaceCount() )
+		let buf_list = s:GetBufferList( workspace )
+		echon "\n  " workspace '   ' | let post_spaces = ''
+		for buf in range( 1, bufnr('$') )
+			if buflisted(buf) && index( buf_list, buf ) != -1
+				echon post_spaces | let post_spaces = '      '
+				if buf == bufnr('%') | echohl Character | endif
+				echon bufnr(buf)' '
+				if buf == bufnr('%') | echon '%' | elseif buf == bufnr('#') | echon '#' | else | echon ' ' | endif
+				if bufwinnr(buf) != -1 | echon 'a' | else | echon 'h' | endif
+				if !getbufvar(buf, '&modifiable') | echon '-' | elseif getbufvar(buf, '&readonly') | echon '=' | else | echon ' ' | endif
+				if getbufvar(buf, '&modified') | echon '+' | elseif getbufvar(buf, '&re') | echon 'x' | else | echon ' ' | endif
+				if len(bufname(buf)) == 0 | echon " [Untitled]\n" | else | echon ' 'bufname(buf)"\n" | endif
+				echohl None
+			endif
+		endfor
+	endfor
+	echon "\n"
+endfunction
+
+function! s:GetBufferWorkspace( buffer )
+	for bws_index in range( len(s:bws_list) )
+		if index( s:bws_list[bws_index], a:buffer ) != -1
+			return bws_index + 2
+		endif
+	endfor
+	return 1
+endfunction
+
+function! s:GetBufferList( workspace )
+	if a:workspace == 1
+		let buf_list = []
+		"let ws_buffers = []
+		"for blist in range( len(s:bws_list) )
+			"call extend( ws_buffers, blist )
+		"endfor
+		for buf in range( 1, bufnr('$') )
+			"if buflisted(buf) && index( ws_buffers, buf ) == -1
+			if buflisted(buf) && match( join( s:bws_list ), '\(\[\| \)'.buf ) == -1
+				call add( buf_list, buf )
+			endif
+		endfor
+		return buf_list
+	elseif a:workspace - 2 < len(s:bws_list) && a:workspace - 2 >= 0
+		return s:bws_list[a:workspace - 2]
+	else
+		return []
+	endif
+endfunction
+
+function! s:GetNextBuffer( buffer )
+	let workspace = s:GetBufferWorkspace( a:buffer )
+	let buf_list = s:GetBufferList( workspace )
+	if len(buf_list) == 1
+		return a:buffer
+	endif
+	let next_buf_index = index( buf_list, a:buffer ) + 1
+	if next_buf_index > len(buf_list) - 1
+		return buf_list[0]
+	endif
+	return buf_list[next_buf_index]
+endfunction
+
+function! s:GetPrevBuffer( buffer )
+	let workspace = s:GetBufferWorkspace( a:buffer )
+	let buf_list = s:GetBufferList( workspace )
+	if len(buf_list) == 1
+		return a:buffer
+	endif
+	let next_buf_index = index( buf_list, a:buffer ) - 1
+	if next_buf_index < 0
+		return buf_list[-1]
+	endif
+	return buf_list[next_buf_index]
+endfunction
+
+function! s:GetNextWorkspace( current_ws )
+	let ws_count = s:GetWorkspaceCount()
+	return s:GetBufferList( a:current_ws%ws_count + 1 )
+endfunction
+
+function! s:GetPrevWorkspace( current_ws )
+	let ws_count = s:GetWorkspaceCount()
+	return s:GetBufferList( ( a:current_ws + ws_count - 2 )%ws_count + 1 )
+endfunction
+
+function! s:RemoveBufferFromWorkspace( buffer, workspace )
+	if a:workspace > 1
+		call remove( s:bws_list[a:workspace - 2], index( s:bws_list[a:workspace - 2], a:buffer ) )
+		if len(s:bws_list[a:workspace - 2]) == 0
+			call remove( s:bws_list, a:workspace - 2 )
+		endif
+	elseif len(s:GetBufferList( 1 )) == 0
+		call remove( s:bws_list, 0 )
+	endif
+endfunction
+
+function! s:CreateWorkspace( buffer )
+	let buffer_ws = s:GetBufferWorkspace( a:buffer )
+
+	call s:RemoveBufferFromWorkspace( a:buffer, buffer_ws )
+
+	call add( s:bws_list, [a:buffer] )
+endfunction
+
+function! s:MoveBufferToWorkspace( buffer, destination_ws )
+	if a:destination_ws > s:GetWorkspaceCount()
+		throw 'Destination workspace does not exist yet!'
+	endif
+
+	let buffer_ws = s:GetBufferWorkspace( a:buffer )
+
+	if a:destination_ws > 1
+		call add( s:bws_list[a:destination_ws - 2], a:buffer )
+	endif
+
+	call s:RemoveBufferFromWorkspace( a:buffer, buffer_ws )
 endfunction
 
 ""}}}
