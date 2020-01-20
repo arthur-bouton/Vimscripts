@@ -43,17 +43,20 @@ set shiftwidth=4
 
 " Comportement "
 set nocompatible
+set viminfo='200,<1000,s100,h,!
 set shortmess+=I
-if filewritable(expand(s:root_dir.'/swap')) == 2
-	execute 'set directory='.s:root_dir.'/swap'
-endif
+if filewritable(expand(s:root_dir.'/swap')) == 2 | execute 'set directory='.s:root_dir.'/swap' | endif
 set splitright
 set splitbelow
 set wildmenu
 set wildmode=longest,list,full
-set autochdir
 set virtualedit=block
 set nojoinspaces
+"set autochdir
+augroup update_local_directory
+	autocmd!
+	autocmd BufEnter * silent! lcd %:p:h
+augroup end
 
 " Restore the previous cursor position when reopening a file:
 augroup restore_cursor_position
