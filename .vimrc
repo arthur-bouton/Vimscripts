@@ -681,6 +681,7 @@ let s:current_session = g:default_session
 augroup autosave_session
 	autocmd!
 	autocmd VimLeave * execute 'mksession!' g:sessions_path.g:default_session
+	autocmd VimLeave * call s:SaveBufWorkspace(g:sessions_path, g:default_session)
 augroup end
 
 command! RestoreSession call RestoreSession()
@@ -693,6 +694,7 @@ command! -nargs=+ -complete=customlist,FileCompletion DeleteSession call DeleteS
 function! RestoreSession()
     if !empty(globpath(g:sessions_path, g:default_session))
         execute 'source' g:sessions_path.g:default_session
+		call s:LoadBufWorkspace(g:sessions_path, g:default_session)
     else
         echohl ErrorMsg | echo 'Aucune session à restorer' | echohl None
     endif
@@ -713,6 +715,7 @@ function! NewSession(bang, session_name)
 				endif
 			endfor
 			execute 'mksession!' g:sessions_path.g:default_session
+			call s:SaveBufWorkspace(g:sessions_path, g:default_session)
 			if s:current_session ==# g:default_session
 				echo "Aucune session particulière n'était ouverte"
 			else
@@ -729,6 +732,7 @@ function! NewSession(bang, session_name)
 	else
 		if empty(globpath(g:sessions_path, a:session_name))
 			execute 'mksession' g:sessions_path.a:session_name
+			call s:SaveBufWorkspace(g:sessions_path, a:session_name)
 			redraw
 			echomsg 'Session' a:session_name 'créée'
 			let s:current_session = a:session_name
@@ -741,6 +745,7 @@ endfunction
 function! SaveSession()
     if s:current_session !=# g:default_session && !empty(globpath(g:sessions_path, s:current_session))
         execute 'mksession!' g:sessions_path.s:current_session
+		call s:SaveBufWorkspace(g:sessions_path, s:current_session)
 		redraw
         echomsg 'Session' s:current_session 'enregistrée'
     else
@@ -751,6 +756,7 @@ endfunction
 function! OverwriteSession(session_name)
     if !empty(globpath(g:sessions_path, a:session_name))
         execute 'mksession!' g:sessions_path.a:session_name
+		call s:SaveBufWorkspace(g:sessions_path, a:session_name)
 		redraw
         echomsg 'Session' a:session_name 'écrasée'
         let s:current_session = a:session_name
@@ -762,6 +768,7 @@ endfunction
 function! OpenSession(session_name)
     if !empty(globpath(g:sessions_path, a:session_name))
         execute 'source' g:sessions_path.a:session_name
+		call s:LoadBufWorkspace(g:sessions_path, a:session_name)
         let s:current_session = a:session_name
     else
         echohl ErrorMsg | echo 'La session' a:session_name "n'existe pas" | echohl None
@@ -772,6 +779,7 @@ function! DeleteSession(session_name)
 	for session in split(a:session_name)
 		if !empty(globpath(g:sessions_path, session))
 			call delete(expand(g:sessions_path.session))
+			call s:DeleteBufWorkspace(g:sessions_path, a:session_name)
 			if session ==# s:current_session
 				let s:current_session = g:default_session
 			endif
@@ -785,6 +793,53 @@ endfunction
 
 function! FileCompletion(ArgLead, CmdLine, CursorPos)
     return map(split(globpath(g:sessions_path, '*'.a:ArgLead.'*'), '\n'), "fnamemodify(v:val, ':t')")
+endfunction
+
+
+" Save and restore buffer workspaces "
+
+function! s:SaveBufWorkspace( path, name )
+	let glob_path = glob( a:path.'/' )
+	if empty( glob_path )
+		throw 'Cannot save the buffer workspaces in' a:path
+	endif
+
+	let session_loading_increment = buflisted( 1 ) ? 1 : 0
+	let bws_string_list = []
+	for bws in s:bws_list
+		call add( bws_string_list, join( map( bws, 'v:val + session_loading_increment' ) ) )
+	endfor
+
+	call writefile( bws_string_list, glob_path.a:name.'.bws' )
+
+	return 0
+endfunction
+
+function! s:LoadBufWorkspace( path, name )
+	let glob_file = globpath( a:path, a:name.'.bws' )
+	if empty( glob_file )
+		return -1
+	endif
+
+	let bws_string_list = readfile( glob_file )
+
+	let s:bws_list = []
+	for bws_string in bws_string_list
+		call add( s:bws_list, map( split( bws_string ), 'str2nr( v:val )' ) )
+	endfor
+
+	return 0
+endfunction
+
+function! s:DeleteBufWorkspace( path, name )
+	let glob_file = globpath( a:path, a:name.'.bws' )
+	if empty( glob_file )
+		return -1
+	endif
+
+	call delete( glob_file )
+
+	return 0
 endfunction
 
 ""}}}
