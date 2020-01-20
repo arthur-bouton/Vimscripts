@@ -517,13 +517,13 @@ function! s:BufWorkspaces()
 			else
 				" Create a new workspace with the current buffer:
 				call s:CreateWorkspace( bufnr('%') )
-				execute 'buffer' prev_ws_buf
+				silent execute 'buffer' prev_ws_buf
 				redraw | echomsg 'New workspace created with buffer' bufnr('%')
 			endif
 		else
 			" Move the current buffer to the given workspace number:
 			call s:MoveBufferToWorkspace( bufnr('%'), answer )
-			execute 'buffer' prev_ws_buf
+			silent execute 'buffer' prev_ws_buf
 			redraw | echomsg 'The buffer' bufnr('%') 'has been moved to the workspace' answer
 		endif
 	elseif answer == 'D'
@@ -799,29 +799,23 @@ endfunction
 " Save and restore buffer workspaces "
 
 function! s:SaveBufWorkspace( path, name )
-	let glob_path = glob( a:path.'/' )
-	if empty( glob_path )
-		throw 'Cannot save the buffer workspaces in' a:path
-	endif
-
 	let session_loading_increment = buflisted( 1 ) ? 1 : 0
+
 	let bws_string_list = []
 	for bws in s:bws_list
 		call add( bws_string_list, join( map( bws, 'v:val + session_loading_increment' ) ) )
 	endfor
 
-	call writefile( bws_string_list, glob_path.a:name.'.bws' )
-
-	return 0
+	call writefile( bws_string_list, expand( a:path.'/.'.a:name.'.bws' ) )
 endfunction
 
 function! s:LoadBufWorkspace( path, name )
-	let glob_file = globpath( a:path, a:name.'.bws' )
-	if empty( glob_file )
+	let glob_path = glob( a:path.'/.'.a:name.'.bws' )
+	if empty( glob_path )
 		return -1
 	endif
 
-	let bws_string_list = readfile( glob_file )
+	let bws_string_list = readfile( glob_path )
 
 	let s:bws_list = []
 	for bws_string in bws_string_list
@@ -832,14 +826,7 @@ function! s:LoadBufWorkspace( path, name )
 endfunction
 
 function! s:DeleteBufWorkspace( path, name )
-	let glob_file = globpath( a:path, a:name.'.bws' )
-	if empty( glob_file )
-		return -1
-	endif
-
-	call delete( glob_file )
-
-	return 0
+	call delete( expand( a:path.'/.'.a:name.'.bws' ) )
 endfunction
 
 ""}}}
