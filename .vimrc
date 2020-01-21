@@ -67,18 +67,18 @@ augroup end
 " Remember the window position when switching buffers:
 augroup remember_view
 	autocmd!
-    autocmd BufLeave * call AutoSaveWinView()
-    autocmd BufEnter * call AutoRestoreWinView()
+    autocmd BufLeave * call s:AutoSaveWinView()
+    autocmd BufEnter * call s:AutoRestoreWinView()
 augroup end
 
-function! AutoSaveWinView()
+function! s:AutoSaveWinView()
     if !exists("w:SavedBufView")
         let w:SavedBufView = {}
     endif
     let w:SavedBufView[bufnr("%")] = winsaveview()
 endfunction
 
-function! AutoRestoreWinView()
+function! s:AutoRestoreWinView()
     let buf = bufnr("%")
     if exists("w:SavedBufView") && has_key(w:SavedBufView, buf)
         let v = winsaveview()
@@ -380,9 +380,9 @@ inoremap <C-r> <C-g>u<C-r>
 inoremap <C-w> <C-g>u<C-w>
 inoremap <C-u> <C-g>u<C-u>
 
-command! ClearUndo call ClearUndo()
+command! ClearUndo call s:ClearUndo()
 
-function! ClearUndo()
+function! s:ClearUndo()
 	call delete(undofile(@%))
 	let old_undolevels = &undolevels
 	set undolevels=-1
@@ -405,13 +405,13 @@ nnoremap <C-s> :Bv<CR>
 nnoremap <C-w>b :bd<CR>
 nnoremap <C-w><C-b> :bd<CR>
 
-command! -bang Bvanish call VanishBuffer(<bang>0)
+command! -bang Bvanish call s:VanishBuffer(<bang>0)
 
-command! -bang DeleteHiddenBufs call DeleteHiddenBufs(<bang>0)
+command! -bang DeleteHiddenBufs call s:DeleteHiddenBufs(<bang>0)
 
-command! -bang -nargs=1 -complete=file SaveAs call SaveAs(<bang>0, '<args>')
+command! -bang -nargs=1 -complete=file SaveAs call s:SaveAs(<bang>0, '<args>')
 
-function! VanishBuffer(bang)
+function! s:VanishBuffer(bang)
 	let present_buffer_nb = bufnr('%')
 	if !a:bang && getbufvar(present_buffer_nb, '&mod')
 		let present_buffer_name = bufname(present_buffer_nb)
@@ -433,7 +433,7 @@ function! VanishBuffer(bang)
 	endif
 endfunction
 
-function! DeleteHiddenBufs(bang)
+function! s:DeleteHiddenBufs(bang)
     let active_windows = []
     for tab in range(1, tabpagenr('$'))
         call extend(active_windows, tabpagebuflist(tab))
@@ -463,7 +463,7 @@ function! DeleteHiddenBufs(bang)
 	endif
 endfunction
 
-function! SaveAs(bang, newfile)
+function! s:SaveAs(bang, newfile)
     if !a:bang && !empty(glob(a:newfile))
         echohl ErrorMsg | echo 'Le fichier' a:newfile 'existe déjà (ajouter ! pour passer outre)' | echohl None
     else
@@ -705,14 +705,14 @@ augroup autosave_session
 	autocmd VimLeave * call s:SaveBufWorkspace(g:sessions_path, g:default_session)
 augroup end
 
-command! RestoreSession call RestoreSession()
-command! -bang -nargs=* -complete=customlist,FileCompletion NewSession call NewSession(<bang>0, '<args>')
-command! SaveSession call SaveSession()
-command! -nargs=1 -complete=customlist,FileCompletion OverwriteSession call OverwriteSession('<args>')
-command! -nargs=1 -complete=customlist,FileCompletion OpenSession call OpenSession('<args>')
-command! -nargs=+ -complete=customlist,FileCompletion DeleteSession call DeleteSession('<args>')
+command! RestoreSession call s:RestoreSession()
+command! -bang -nargs=* -complete=customlist,FileCompletion NewSession call s:NewSession(<bang>0, '<args>')
+command! SaveSession call s:SaveSession()
+command! -nargs=1 -complete=customlist,FileCompletion OverwriteSession call s:OverwriteSession('<args>')
+command! -nargs=1 -complete=customlist,FileCompletion OpenSession call s:OpenSession('<args>')
+command! -nargs=+ -complete=customlist,FileCompletion DeleteSession call s:DeleteSession('<args>')
 
-function! RestoreSession()
+function! s:RestoreSession()
     if !empty(globpath(g:sessions_path, g:default_session))
         execute 'source' g:sessions_path.g:default_session
 		call s:LoadBufWorkspace(g:sessions_path, g:default_session)
@@ -721,7 +721,7 @@ function! RestoreSession()
     endif
 endfunction
 
-function! NewSession(bang, session_name)
+function! s:NewSession(bang, session_name)
 	if empty(a:session_name)
 		let modbufs = []
 		for buf in range(1, bufnr('$'))
@@ -763,7 +763,7 @@ function! NewSession(bang, session_name)
 	endif
 endfunction
 
-function! SaveSession()
+function! s:SaveSession()
     if s:current_session !=# g:default_session && !empty(globpath(g:sessions_path, s:current_session))
         execute 'mksession!' g:sessions_path.s:current_session
 		call s:SaveBufWorkspace(g:sessions_path, s:current_session)
@@ -774,7 +774,7 @@ function! SaveSession()
     endif
 endfunction
 
-function! OverwriteSession(session_name)
+function! s:OverwriteSession(session_name)
     if !empty(globpath(g:sessions_path, a:session_name))
         execute 'mksession!' g:sessions_path.a:session_name
 		call s:SaveBufWorkspace(g:sessions_path, a:session_name)
@@ -786,7 +786,7 @@ function! OverwriteSession(session_name)
     endif
 endfunction
 
-function! OpenSession(session_name)
+function! s:OpenSession(session_name)
     if !empty(globpath(g:sessions_path, a:session_name))
         execute 'source' g:sessions_path.a:session_name
 		call s:LoadBufWorkspace(g:sessions_path, a:session_name)
@@ -796,7 +796,7 @@ function! OpenSession(session_name)
     endif
 endfunction
 
-function! DeleteSession(session_name)
+function! s:DeleteSession(session_name)
 	for session in split(a:session_name)
 		if !empty(globpath(g:sessions_path, session))
 			call delete(expand(g:sessions_path.session))
@@ -877,10 +877,10 @@ nnoremap <buffer> !S (c)
 
 augroup text_mode
 	autocmd!
-	autocmd FileType text call Load_text_mode()
+	autocmd FileType text call s:Load_text_mode()
 augroup end
 
-function! Load_text_mode()
+function! s:Load_text_mode()
 	setlocal wrap linebreak nolist
 
 	nnoremap <buffer> j gj
@@ -942,12 +942,12 @@ augroup end
 
 nnoremap <silent> é :call SwitchComment(1)<CR>
 vnoremap <silent> é :call SwitchComment(0)<CR>gv<Esc>
-nnoremap <silent> <leader>f :call Format()<CR>
-vnoremap <silent> <leader>f :call Format()<CR>gv<Esc>
+nnoremap <silent> <leader>f :Format<CR>
+vnoremap <silent> <leader>f :Format<CR>gv<Esc>
 
-command! -range Comment <line1>,<line2> call Comment()
-command! -range UnComment <line1>,<line2> call UnComment()
-command! -range Format <line1>,<line2> call Format()
+command! -range Comment <line1>,<line2> call s:Comment()
+command! -range UnComment <line1>,<line2> call s:UnComment()
+command! -range Format <line1>,<line2> call s:Format()
 
 function! SwitchComment(pos)
 	if exists('b:comment_char')
@@ -968,7 +968,7 @@ function! SwitchComment(pos)
 	endif
 endfunction
 
-function! Comment()
+function! s:Comment()
 	if exists('b:comment_char')
 		normal! ^
 		if getline('.')[col('.')-1:col('.')-2+strlen(b:comment_char)] != b:comment_char
@@ -979,7 +979,7 @@ function! Comment()
 	endif
 endfunction
 
-function! UnComment()
+function! s:UnComment()
 	if exists('b:comment_char')
 		normal! ^
 		while getline('.')[col('.')-1:col('.')-2+strlen(b:comment_char)] == b:comment_char
@@ -991,7 +991,7 @@ function! UnComment()
 	endif
 endfunction
 
-function! Format()
+function! s:Format()
 	normal! ^
 	while search('(\|,', 'c', line('.'))
 		if getline('.')[col('.')-1:col('.')] == '()'
@@ -1026,14 +1026,14 @@ endfunction
 
 augroup latex_mode
 	autocmd!
-	autocmd FileType tex,plaintex call Load_latex_mode()
+	autocmd FileType tex,plaintex call s:Load_latex_mode()
 augroup end
 
-function! Load_latex_mode()
+function! s:Load_latex_mode()
 
-	let s:auxdir = 'auxfiles'
+	let g:auxdir = 'auxfiles'
 
-	call Load_text_mode()
+	call s:Load_text_mode()
 
 	if filereadable(expand(s:root_dir.'/syntax/latex.vim'))
 		set syntax=latex
@@ -1059,8 +1059,8 @@ function! Load_latex_mode()
 		endif
 		let root = root.'/'
 
-		let pdflatex_cmd = '!cd '.root.'&& mkdir -p '.s:auxdir.'&& pdflatex -output-directory '.s:auxdir.' '.file
-		                 \.'&& mv '.s:auxdir.'/$(basename '.file.' .tex).pdf .'
+		let pdflatex_cmd = '!cd '.root.'&& mkdir -p '.g:auxdir.'&& pdflatex -output-directory '.g:auxdir.' '.file
+		                 \.'&& mv '.g:auxdir.'/$(basename '.file.' .tex).pdf .'
         if a:bang
             execute pdflatex_cmd '&&' g:netrw_browsex_viewer root.'$(basename' file '.tex).pdf'
 		else
@@ -1080,10 +1080,10 @@ function! Load_latex_mode()
 		endif
 		let root = root.'/'
 
-		let pdflatex_cmd = ' && pdflatex -output-directory '.s:auxdir.' '.file
-		let bibtex_cmd = '!cd '.root.'&& mkdir -p '.s:auxdir.'&& rm -f '.s:auxdir.'*.bbl'.pdflatex_cmd
-		               \.'&& bibtex '.s:auxdir.'/$(basename '.file.' .tex)'.pdflatex_cmd.pdflatex_cmd
-		               \.'&& mv '.s:auxdir.'/$(basename '.file.' .tex).pdf .'
+		let pdflatex_cmd = ' && pdflatex -output-directory '.g:auxdir.' '.file
+		let bibtex_cmd = '!cd '.root.'&& mkdir -p '.g:auxdir.'&& rm -f '.g:auxdir.'*.bbl'.pdflatex_cmd
+		               \.'&& bibtex '.g:auxdir.'/$(basename '.file.' .tex)'.pdflatex_cmd.pdflatex_cmd
+		               \.'&& mv '.g:auxdir.'/$(basename '.file.' .tex).pdf .'
         if a:bang
             execute bibtex_cmd '&&' g:netrw_browsex_viewer root.'$(basename' file '.tex).pdf'
 		else
@@ -1103,9 +1103,9 @@ function! Load_latex_mode()
 		endif
 		let root = root.'/'
 
-		let pdflatex_cmd = '!cd '.root.'&& mkdir -p '.s:auxdir.'&& makeindex '.s:auxdir.'/$(basename '.file.' .tex).nlo -s nomencl.ist -o '.s:auxdir.'/$(basename '.file.' .tex).nls'
-		                 \.'&& pdflatex -output-directory '.s:auxdir.' '.file
-		                 \.'&& mv '.s:auxdir.'/$(basename '.file.' .tex).pdf .'
+		let pdflatex_cmd = '!cd '.root.'&& mkdir -p '.g:auxdir.'&& makeindex '.g:auxdir.'/$(basename '.file.' .tex).nlo -s nomencl.ist -o '.g:auxdir.'/$(basename '.file.' .tex).nls'
+		                 \.'&& pdflatex -output-directory '.g:auxdir.' '.file
+		                 \.'&& mv '.g:auxdir.'/$(basename '.file.' .tex).pdf .'
         if a:bang
             execute pdflatex_cmd '&&' g:netrw_browsex_viewer root.'$(basename' file '.tex).pdf'
 		else
@@ -1231,12 +1231,12 @@ nnoremap <F7> :SpellFr<CR>
 inoremap <F6> <Esc>:SpellEn<CR>a
 inoremap <F7> <Esc>:SpellFr<CR>a
 
-command! SpellFr call SpellFr()
-command! SpellEn call SpellEn()
+command! SpellFr call s:SpellFr()
+command! SpellEn call s:SpellEn()
 
 let g:languagetool_jar = '~/Bin/LanguageTool-3.0/languagetool-commandline.jar'
 
-function! SpellFr()
+function! s:SpellFr()
 	if &spell==0 || &spelllang!='fr'
 		setlocal spelllang=fr spell
 		echo 'Correction orthographique française activée'
@@ -1248,7 +1248,7 @@ function! SpellFr()
 	endif
 endfunction
 
-function! SpellEn()
+function! s:SpellEn()
 	if &spell==0 || &spelllang!='en'
 		setlocal spelllang=en spell
 		echo 'Correction orthographique anglaise activée'
@@ -1266,9 +1266,9 @@ endfunction
 "" Git ""{{{
 
 " Open a previous git version of the current file:
-command! -nargs=? GitShow silent call GitShow('<args>')
+command! -nargs=? GitShow silent call s:GitShow('<args>')
 
-function! GitShow(rev)
+function! s:GitShow(rev)
 	if !empty(a:rev)
 		let rev = a:rev
 	else
@@ -1318,11 +1318,7 @@ nnoremap <leader>g :GitFiles<CR>
 
 augroup tabular_config
 	autocmd!
-	autocmd FileType * if exists(':AddTabularPattern') == 2 | call AllTypeTabPattern() | endif
+	autocmd FileType * if exists(':AddTabularPattern') == 2 | AddTabularPattern! align_last /\S*$ | endif
 augroup end
-
-function! AllTypeTabPattern()
-	AddTabularPattern! align_last /\S*$
-endfunction
 
 ""}}}
