@@ -123,8 +123,8 @@ if has('gui_running')
 	vmenu PopUp.Rechercher<Tab>ù ù
 	nmenu PopUp.Masquer\ la\ recherche<Tab>ù ù
 
-	vnoremap <C-S-c> "+ygv<Esc>
-	inoremap <C-S-v> <Esc>"+pa
+	vnoremap <C-S-c> "+ygv<ESC>
+	inoremap <C-S-v> <ESC>"+pa
 end
 
 ""}}}
@@ -134,15 +134,17 @@ end
 
 let mapleader = 'è'
 
-inoremap jk <Esc>
+inoremap jk <ESC>
 
 nnoremap <C-q> :qa<CR>
 
+nnoremap <C-w>t :tabnew<Bar>Bv<CR>
+nnoremap <C-w>C :tabclose<CR>
 nnoremap <C-Tab> :tabn<CR>
 nnoremap <C-S-Tab> :tabp<CR>
 
-nnoremap <C-w>n :ene<CR>
-nnoremap <C-w><C-n> :ene<CR>
+nnoremap <C-w>n :enew<CR>
+nnoremap <C-w><C-n> :enew<CR>
 
 nnoremap ¨ :reg<CR>
 inoremap ¨ <ESC>:reg<CR>
@@ -152,24 +154,26 @@ nnoremap § :browse oldfiles<CR>
 vnoremap < <gv
 vnoremap > >gv
 
+vnoremap y ygv<ESC>
+vnoremap p pgv<ESC>
+vnoremap P Pgv<ESC>
+
 nnoremap Y y$
 nnoremap <C-p> D"0p
 
-noremap gV `[v`]
+nnoremap <C-o> o<ESC>
 
-vnoremap y ygv<Esc>
-vnoremap p pgv<Esc>
-vnoremap P Pgv<Esc>
+noremap gV `[v`]
 
 nnoremap ° "0
 vnoremap ° "0
 
-vnoremap ç "+ygv<Esc>
+vnoremap ç "+ygv<ESC>
 nnoremap à "+p
 vnoremap à "+p
 
 nnoremap <silent> ù :noh<CR>
-vnoremap <silent> ù :<C-u>call setreg('/',getreg('*'))<Bar>set hls<CR>gv<Esc>
+vnoremap <silent> ù :<C-u>call setreg('/',getreg('*'))<Bar>set hls<CR>gv<ESC>
 
 " Complete with file and directory names if the previous character is '/':
 inoremap <expr> <C-Space> getline('.')[col('.')-2] == '/' ? '<C-x><C-f>' : '<Space>'
@@ -184,19 +188,19 @@ nnoremap <leader>r :redr!<CR>
 nnoremap <silent> <space>$ :sh<CR>
 
 nnoremap vv viw
-vnoremap <silent> v <Esc>:call VisualViW()<CR>
+vnoremap <silent> v <ESC>:call VisualViW()<CR>
 
 nnoremap <silent> <F8> :call SwitchList()<CR>
-inoremap <silent> <F8> <Esc>:call SwitchList()<CR>a
-vnoremap <silent> <F8> <Esc>:call SwitchList()<CR>gv
+inoremap <silent> <F8> <ESC>:call SwitchList()<CR>a
+vnoremap <silent> <F8> <ESC>:call SwitchList()<CR>gv
 
 nnoremap <silent> <F9> :set cursorline!<CR>
-inoremap <silent> <F9> <Esc>:set cursorline!<CR>a
-vnoremap <silent> <F9> <Esc>:set cursorline!<CR>gv
+inoremap <silent> <F9> <ESC>:set cursorline!<CR>a
+vnoremap <silent> <F9> <ESC>:set cursorline!<CR>gv
 
 nnoremap <silent> <F10> :set cursorcolumn!<CR>
-inoremap <silent> <F10> <Esc>:set cursorcolumn!<CR>a
-vnoremap <silent> <F10> <Esc>:set cursorcolumn!<CR>gv
+inoremap <silent> <F10> <ESC>:set cursorcolumn!<CR>a
+vnoremap <silent> <F10> <ESC>:set cursorcolumn!<CR>gv
 
 nnoremap <silent> g" :call EditReg()<CR>
 
@@ -320,10 +324,13 @@ nnoremap <C-k> 3k
 nnoremap <C-h> 10h
 nnoremap <C-l> 10l
 
-inoremap <C-j> <Esc>gEa
-inoremap <C-k> <Esc>Ea
-inoremap <C-h> <Esc>I
-inoremap <C-l> <Esc>A
+inoremap <C-j> <ESC>gEa
+inoremap <C-k> <ESC>Ea
+inoremap <C-h> <ESC>I
+inoremap <C-l> <ESC>A
+
+nnoremap <Space>o <C-o>
+nnoremap <Space>i <C-i>
 
 nnoremap <Space><Space> :marks<CR>
 nnoremap <Space> `
@@ -371,6 +378,9 @@ if filewritable(expand(s:root_dir.'/undo')) == 2
 	set undofile
 	execute 'set undodir='.s:root_dir.'/undo'
 endif
+
+nnoremap <leader>u :earlier f<CR>
+nnoremap <leader>r :later f<CR>
 
 inoremap <C-_> <C-o>u
 
@@ -891,8 +901,8 @@ function! s:Load_text_mode()
 	nnoremap <buffer> ^ g^
 	nnoremap <buffer> $ g$
 
-	inoremap <buffer> <C-h> <Esc>(a
-	inoremap <buffer> <C-l> <Esc>:call Appendtext()<CR>a
+	inoremap <buffer> <C-h> <ESC>(a
+	inoremap <buffer> <C-l> <ESC>:call Appendtext()<CR>a
 	
 	inoremap <buffer> <C-u> <C-g>u<C-o>d(
 endfunction
@@ -941,9 +951,9 @@ augroup ide_config
 augroup end
 
 nnoremap <silent> é :call SwitchComment(1)<CR>
-vnoremap <silent> é :call SwitchComment(0)<CR>gv<Esc>
+vnoremap <silent> é :call SwitchComment(0)<CR>gv<ESC>
 nnoremap <silent> <leader>f :Format<CR>
-vnoremap <silent> <leader>f :Format<CR>gv<Esc>
+vnoremap <silent> <leader>f :Format<CR>gv<ESC>
 
 command! -range Comment <line1>,<line2> call s:Comment()
 command! -range UnComment <line1>,<line2> call s:UnComment()
@@ -1116,14 +1126,14 @@ function! s:Load_latex_mode()
 	nnoremap <buffer> gl :call LatexLayout()<CR>
 
 	nnoremap <buffer> gn /<??><CR>vf>o
-	vnoremap <buffer> gn <Esc>/<??><CR>vf>o
-	inoremap <buffer> <C-g>n <Esc>/<??><CR>vf>o
-	inoremap <buffer> <C-g><C-n> <Esc>/<??><CR>vf>o
+	vnoremap <buffer> gn <ESC>/<??><CR>vf>o
+	inoremap <buffer> <C-g>n <ESC>/<??><CR>vf>o
+	inoremap <buffer> <C-g><C-n> <ESC>/<??><CR>vf>o
 
 	nnoremap <buffer> gp ?<\?\?><CR>vf>o
-	vnoremap <buffer> gp <Esc>?<\?\?><CR>vf>o
-	inoremap <buffer> <C-g>p <Esc>?<\?\?><CR>vf>o
-	inoremap <buffer> <C-g><C-p> <Esc>?<\?\?><CR>vf>o
+	vnoremap <buffer> gp <ESC>?<\?\?><CR>vf>o
+	inoremap <buffer> <C-g>p <ESC>?<\?\?><CR>vf>o
+	inoremap <buffer> <C-g><C-p> <ESC>?<\?\?><CR>vf>o
 
 	let s:latex_layouts = {
 	\'document': '\begin{document}	\end{document}k',
@@ -1228,8 +1238,8 @@ endfunction
 nnoremap <F6> :SpellEn<CR>
 nnoremap <F7> :SpellFr<CR>
 
-inoremap <F6> <Esc>:SpellEn<CR>a
-inoremap <F7> <Esc>:SpellFr<CR>a
+inoremap <F6> <ESC>:SpellEn<CR>a
+inoremap <F7> <ESC>:SpellFr<CR>a
 
 command! SpellFr call s:SpellFr()
 command! SpellEn call s:SpellEn()
