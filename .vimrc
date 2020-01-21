@@ -484,6 +484,20 @@ command! BufWorkspaces call s:BufWorkspaces()
 command! NextBuffer exe 'b' s:GetNextBuffer( bufnr('%') )
 command! PrevBuffer exe 'b' s:GetPrevBuffer( bufnr('%') )
 
+augroup set_new_buffer_workspace
+	autocmd!
+	autocmd BufRead * call s:MoveBufferToWorkspace( bufnr('%'), s:GetBufferWorkspace(bufnr('#')) )
+	autocmd BufAdd  * call s:MoveBufferToWorkspace( bufnr('$'), s:GetBufferWorkspace(bufnr('%')) )
+
+	"autocmd BufRead * echo 'BufRead' bufnr('%') bufnr('#')
+	"autocmd BufAdd * echo 'BufAdd' bufnr('$') bufnr('%')
+augroup end
+
+augroup clean_workspace
+	autocmd!
+	autocmd BufDelete * call s:RemoveBufferFromWorkspace( bufnr('#'), s:GetBufferWorkspace(bufnr('#')) )
+augroup end
+
 let s:bws_list = []
 
 function! s:BufWorkspaces()
@@ -662,6 +676,10 @@ function! s:MoveBufferToWorkspace( buffer, destination_ws )
 	endif
 
 	let buffer_ws = s:GetBufferWorkspace( a:buffer )
+
+	if a:destination_ws == buffer_ws
+		return
+	endif
 
 	if a:destination_ws > 1
 		call add( s:bws_list[a:destination_ws - 2], a:buffer )
