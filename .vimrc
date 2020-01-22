@@ -494,14 +494,14 @@ command! BufWorkspaces call s:BufWorkspaces()
 command! NextBuffer exe 'b' s:GetNextBuffer( bufnr('%') )
 command! PrevBuffer exe 'b' s:GetPrevBuffer( bufnr('%') )
 
-augroup set_new_buffer_workspace
-	autocmd!
-	autocmd BufRead * call s:MoveBufferToWorkspace( bufnr('%'), s:GetBufferWorkspace(bufnr('#')) )
-	autocmd BufAdd  * call s:MoveBufferToWorkspace( bufnr('$'), s:GetBufferWorkspace(bufnr('%')) )
+"augroup set_new_buffer_workspace
+	"autocmd!
+	"autocmd BufRead * call s:MoveBufferToWorkspace( bufnr('%'), s:GetBufferWorkspace(bufnr('#')) )
+	"autocmd BufAdd  * call s:MoveBufferToWorkspace( bufnr('$'), s:GetBufferWorkspace(bufnr('%')) )
 
 	"autocmd BufRead * echo 'BufRead' bufnr('%') bufnr('#')
 	"autocmd BufAdd * echo 'BufAdd' bufnr('$') bufnr('%')
-augroup end
+"augroup end
 
 augroup clean_workspace
 	autocmd!
@@ -518,11 +518,11 @@ function! s:BufWorkspaces()
 	let prev_ws_buf = s:GetPrevBuffer( bufnr('%') )
 
 	if ws_count > 1
-		echo ' [1-'.ws_count."]: change buffer's ws    "
+		echo ' [1-'.ws_count."] change buffer's ws    "
 	else
 		echo ' '
 	endif
-	echon ws_count + 1.': create ws    n: next ws    p: prev ws    D: delete all ws    b: open buffer'
+	echon '[' ws_count + 1 '] create ws    [n] next ws    [p] prev ws    [D] delete all ws    [b] open buffer'
 	echohl Question | echo '-- Enter a command or any other key to cancel --' | echohl None
 	let answer = nr2char(getchar())
 	if answer == 'n'
@@ -682,7 +682,7 @@ endfunction
 
 function! s:MoveBufferToWorkspace( buffer, destination_ws )
 	if a:destination_ws > s:GetWorkspaceCount()
-		throw 'Destination workspace does not exist yet!'
+		throw 'The destination workspace does not exist yet!'
 	endif
 
 	let buffer_ws = s:GetBufferWorkspace( a:buffer )
@@ -830,11 +830,22 @@ endfunction
 " Save and restore buffer workspaces "
 
 function! s:SaveBufWorkspace( path, name )
-	let session_loading_increment = buflisted( 1 ) ? 1 : 0
+	" Shift the buffer numbers so they start at 2 and fill the possible gaps between them:
+	let shift_list = [ buflisted( 1 ) ? 1 : 0 ]
+	let prev_buf = 1
+	for buf in range( 2, bufnr('$') )
+		if buflisted(buf)
+			call add( shift_list, prev_buf + 1 - buf + shift_list[-1] )
+			let prev_buf = buf
+		else
+			call add( shift_list, shift_list[-1] )
+		endif
+	endfor
 
+	" Translate the list of list of buffer numbers to a list of strings:
 	let bws_string_list = []
 	for bws in s:bws_list
-		call add( bws_string_list, join( map( bws, 'v:val + session_loading_increment' ) ) )
+		call add( bws_string_list, join( map( copy( bws ), 'v:val + shift_list[v:val-1]' ) ) )
 	endfor
 
 	call writefile( bws_string_list, expand( a:path.'/.'.a:name.'.bws' ) )
@@ -848,6 +859,7 @@ function! s:LoadBufWorkspace( path, name )
 
 	let bws_string_list = readfile( glob_path )
 
+	" Translate the list of strings to a list of list of buffer numbers:
 	let s:bws_list = []
 	for bws_string in bws_string_list
 		call add( s:bws_list, map( split( bws_string ), 'str2nr( v:val )' ) )
