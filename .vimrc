@@ -183,12 +183,14 @@ nnoremap <leader>t <C-]>
 nnoremap g<leader>t g<C-]>
 inoremap <C-x><leader>t <C-x><C-]>
 
-nnoremap <leader>r :redr!<CR>
+nnoremap <leader>l :redraw!<CR>
 
 nnoremap <silent> <space>$ :sh<CR>
 
 nnoremap vv viw
 vnoremap <silent> v <ESC>:call VisualViW()<CR>
+
+vnoremap <silent> <C-i> <ESC>:call BracketMode()<CR>
 
 nnoremap <silent> <F8> :call SwitchList()<CR>
 inoremap <silent> <F8> <ESC>:call SwitchList()<CR>a
@@ -208,6 +210,103 @@ nnoremap <silent> <space>* :call HlSearch()<CR>
 
 nnoremap <silent> g= viW:call MathEdit()<CR>
 vnoremap <silent> g= :call MathEdit()<CR>
+
+
+function! BracketMode()
+	let line_1 = getpos("'<")[1]
+	let line_2 = getpos("'>")[1]
+	let col_1 = getpos("'<")[2]
+	let col_2 = getpos("'>")[2] + 1
+	let len = 0
+
+	if getpos('.')[2] == col_1
+		let left = 1
+		let cursor_line = line_1
+		let cursor_col = col_1
+	else
+		let left = 0
+		let cursor_line = line_2
+		let cursor_col = col_2
+	endif
+
+	let m = matchaddpos( 'MatchParen', [] )
+	let c = matchaddpos( 'Cursor', [ [ cursor_line, cursor_col, 1 ] ] )
+	redraws
+	echohl Title
+	echon '-- BRACKET --'
+
+	let typed_char = nr2char(getchar())
+	while index( [ '', '', '	', '', '' ], typed_char ) == -1
+
+		if typed_char == ''
+			if len <= 0
+				let typed_char = nr2char(getchar())
+				continue
+			endif
+
+			call setpos( '.', [ bufnr('%'), line_2, ( left ? col_2 : col_2 + len - 1 ) ] )
+			normal! x
+
+			call setpos( '.', [ bufnr('%'), line_1, ( left ? col_1 + len - 1 : col_1 ) ] )
+			normal! x
+
+			let len -= 1
+			if line_2 == line_1 | let col_2 -= 1 | endif
+			let cursor_col -= left || line_2 > line_1 ? 1 : 2
+		else
+			if left
+				let typed_char = s:InverseBrackets( typed_char )
+			endif
+
+			call setpos( '.', [ bufnr('%'), line_2, ( left ? col_2 : col_2 + len ) - 1 ] )
+			execute 'normal! a'.typed_char
+
+			let typed_char = s:InverseBrackets( typed_char )
+
+			call setpos( '.', [ bufnr('%'), line_1, ( left ? col_1 + len : col_1 ) ] )
+			execute 'normal! i'.typed_char
+
+			let len += 1
+			if line_2 == line_1 | let col_2 += 1 | endif
+			let cursor_col += left || line_2 > line_1 ? 1 : 2
+		endif
+
+		call matchdelete( m )
+		call matchdelete( c )
+		let m = matchaddpos( 'MatchParen', [ [ line_1, col_1, len > 0 ? len : -1 ], [ line_2, col_2, len > 0 ? len : -1 ] ] )
+		let c = matchaddpos( 'Cursor', [ [ cursor_line, cursor_col, 1 ] ] )
+		redraws
+		echon '-- BRACKET --'
+
+		let typed_char = nr2char(getchar())
+	endwhile
+	call matchdelete( m )
+	call matchdelete( c )
+	echohl None
+	echo ''
+	redraws
+
+	if left || typed_char == ''
+		call setpos( '.', [ bufnr('%'), line_1, col_1 ] )
+	else
+		call setpos( '.', [ bufnr('%'), line_2, col_2 + len - 1 ] )
+	endif
+	execute "normal! a\<ESC>"
+endfunction
+
+function! s:InverseBrackets( char )
+	if a:char == '(' | return ')'
+	elseif a:char == ')' | return '('
+	elseif a:char == '[' | return ']'
+	elseif a:char == ']' | return '['
+	elseif a:char == '{' | return '}'
+	elseif a:char == '}' | return '{'
+	elseif a:char == '<' | return '>'
+	elseif a:char == '>' | return '<'
+	else
+		return a:char
+	endif
+endfunction
 
 
 function! VisualViW()
