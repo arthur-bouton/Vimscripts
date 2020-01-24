@@ -379,8 +379,8 @@ if filewritable(expand(s:root_dir.'/undo')) == 2
 	execute 'set undodir='.s:root_dir.'/undo'
 endif
 
-nnoremap <leader>u :earlier f<CR>
-nnoremap <leader>r :later f<CR>
+nnoremap <leader>u :earlier 1f<CR>
+nnoremap <leader>r :later 1f<CR>
 
 inoremap <C-_> <C-o>u
 
@@ -398,7 +398,6 @@ function! s:ClearUndo()
 	set undolevels=-1
 	execute 'normal! a '
 	let &undolevels = old_undolevels
-	unlet old_undolevels
 endfunction
 
 ""}}}
@@ -949,10 +948,11 @@ augroup ide_config
 	autocmd FileType vim setlocal foldmethod=marker | set foldmarker={{{,}}}
 	autocmd FileType python setlocal foldmethod=indent
 	autocmd FileType python nnoremap gt oimport pdb; pdb.set_trace()<esc>
-	"Ignore boost librairies for autocompletion:
-	autocmd FileType c,cpp,sh,arduino setlocal include=^\\s*#\\s*include\ \\(<boost/\\)\\@!
 	autocmd FileType c,cpp,sh,arduino setlocal foldmethod=marker | set foldmarker={,}
+	"Ignore boost librairies for autocompletion:
+	autocmd FileType c,cpp,arduino setlocal include=^\\s*#\\s*include\ \\(<boost/\\)\\@!
 	autocmd FileType c,cpp,arduino set iskeyword+=:
+	autocmd FileType c,cpp,arduino set smartindent
 	autocmd FileType tex setlocal foldmethod=marker
 
 	autocmd FileType vim let b:comment_char = '"'
