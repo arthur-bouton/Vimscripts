@@ -213,85 +213,149 @@ vnoremap <silent> g= :call MathEdit()<CR>
 
 
 function! BracketMode()
+	let autoindent_config = &autoindent
+	set noautoindent
+
 	let line_1 = getpos("'<")[1]
 	let line_2 = getpos("'>")[1]
 	let col_1 = getpos("'<")[2]
-	let col_2 = getpos("'>")[2] + 1
+	let col_2 = ( visualmode() == 'V' ? strwidth( getline( line_2 ) ) : getpos("'>")[2] ) + 1
 	let len = 0
 
-	if getpos('.')[2] == col_1
-		let left = 1
-		let cursor_line = line_1
-		let cursor_col = col_1
-	else
+	if getpos('.')[2] == getpos("'>")[2] || visualmode() == 'V' && getpos('.')[1] == line_2
 		let left = 0
 		let cursor_line = line_2
 		let cursor_col = col_2
+	else
+		let left = 1
+		let cursor_line = line_1
+		let cursor_col = col_1
 	endif
 
-	let m = matchaddpos( 'MatchParen', [] )
-	let c = matchaddpos( 'Cursor', [ [ cursor_line, cursor_col, 1 ] ] )
+	let orig_line = cursor_line
+	let orig_col_1 = col_1
+
+	call matchaddpos( 'Cursor', [ [ cursor_line, cursor_col ] ] )
 	redraws
 	echohl Title
 	echon '-- BRACKET --'
 
 	let typed_char = nr2char(getchar())
-	while index( [ '', '', '	', '', '' ], typed_char ) == -1
+	while index( [ '', '', '	', '' ], typed_char ) == -1
 
 		if typed_char == ''
-			if len <= 0
+			if cursor_line == orig_line && len <= 0
 				let typed_char = nr2char(getchar())
 				continue
 			endif
 
-			call setpos( '.', [ bufnr('%'), line_2, ( left ? col_2 : col_2 + len - 1 ) ] )
-			normal! x
+			if cursor_col == 1
+				let prev_line_len = strwidth( getline( line_2 - 1 ) )
+			endif
 
-			call setpos( '.', [ bufnr('%'), line_1, ( left ? col_1 + len - 1 : col_1 ) ] )
-			normal! x
+			let col = ( left ? col_2 : col_2 + len ) - 1
+			call setpos( '.', [ bufnr('%'), line_2, col ] )
+			execute 'normal!' ( col > 0 ? 'a' : 'i' ).( left ? "\<Del>" : "\<BS>" )
 
-			let len -= 1
-			if line_2 == line_1 | let col_2 -= 1 | endif
-			let cursor_col -= left || line_2 > line_1 ? 1 : 2
+			let col = ( left ? col_1 + len : col_1 ) - 1
+			call setpos( '.', [ bufnr('%'), line_1, col ] )
+			execute 'normal!' ( col > 0 ? 'a' : 'i' ).( left ? "\<BS>" : "\<Del>" )
+
+			if cursor_col > 1
+				let len -= 1
+				if line_2 == line_1 | let col_2 -= 1 | endif
+				let cursor_col -= left || line_2 > line_1 ? 1 : 2
+			else
+				let len = prev_line_len
+				if left
+					let line_1 -= 1
+					let line_2 -= 1
+					let col_1 = 1
+					let col_2 += prev_line_len
+					let cursor_line = line_1
+					let cursor_col = col_1 + len
+				else
+					let line_2 -= 2
+					let col_2 = 1
+					let cursor_line = line_2
+					let cursor_col = col_2 + len
+				endif
+				if cursor_line == orig_line
+					let col_1 = orig_col_1
+					let col_2 = orig_col_2
+					let len = orig_len
+					let cursor_col = ( left ? col_1 : col_2 ) + len
+				endif
+			endif
 		else
 			if left
 				let typed_char = s:InverseBrackets( typed_char )
 			endif
 
-			call setpos( '.', [ bufnr('%'), line_2, ( left ? col_2 : col_2 + len ) - 1 ] )
-			execute 'normal! a'.typed_char
+			let col = ( left ? col_2 : col_2 + len ) - 1
+			call setpos( '.', [ bufnr('%'), line_2, col ] )
+			execute 'normal!' ( col > 0 ? 'a' : 'i' ).typed_char
 
 			let typed_char = s:InverseBrackets( typed_char )
 
-			call setpos( '.', [ bufnr('%'), line_1, ( left ? col_1 + len : col_1 ) ] )
-			execute 'normal! i'.typed_char
+			let col = ( left ? col_1 + len : col_1 ) - 1
+			call setpos( '.', [ bufnr('%'), line_1, col ] )
+			execute 'normal!' ( col > 0 ? 'a' : 'i' ).typed_char
 
-			let len += 1
-			if line_2 == line_1 | let col_2 += 1 | endif
-			let cursor_col += left || line_2 > line_1 ? 1 : 2
+			if typed_char == ''
+				if cursor_line == orig_line
+					let orig_col_2 = col_2
+					let orig_len = len
+				endif
+				if left
+					let col_2 -= col_1 + len - 1
+					let line_1 += 1
+					let line_2 += 1
+					let col_1 = 1
+					let cursor_line = line_1
+				else
+					let line_2 += 2
+					let col_2 = 1
+					let cursor_line = line_2
+				endif
+				let len = 0
+				let cursor_col = 1
+			else
+				let len += 1
+				if line_2 == line_1 | let col_2 += 1 | endif
+				let cursor_col += left || line_2 > line_1 ? 1 : 2
+			endif
 		endif
 
-		call matchdelete( m )
-		call matchdelete( c )
-		let m = matchaddpos( 'MatchParen', [ [ line_1, col_1, len > 0 ? len : -1 ], [ line_2, col_2, len > 0 ? len : -1 ] ] )
-		let c = matchaddpos( 'Cursor', [ [ cursor_line, cursor_col, 1 ] ] )
+		call clearmatches()
+		"for l in range( 1, max([ 0, ( cursor_line - orig_line - 1 )/( left ? 1 : 2 ) ]) )
+			"call matchaddpos( 'MatchParen', [ line_1 + l, line_2 - l ] )
+		"endfor
+		"if len > 0
+			"call matchaddpos( 'MatchParen', [ [ line_1, col_1, len ], [ line_2, col_2, len ] ] )
+		"endif
+		call matchaddpos( 'Cursor', [ [ cursor_line, cursor_col ] ] )
 		redraws
 		echon '-- BRACKET --'
 
 		let typed_char = nr2char(getchar())
 	endwhile
-	call matchdelete( m )
-	call matchdelete( c )
+	call clearmatches()
 	echohl None
 	echo ''
 	redraws
 
 	if left || typed_char == ''
-		call setpos( '.', [ bufnr('%'), line_1, col_1 ] )
+		call setpos( '.', [ bufnr('%'), orig_line, orig_col_1 ] )
 	else
 		call setpos( '.', [ bufnr('%'), line_2, col_2 + len - 1 ] )
 	endif
 	execute "normal! a\<ESC>"
+	"TODO Set previous visual to all modified area when left = 1 as well
+	call setpos( "'<", [ bufnr('%'), line_1, col_1 ] )
+	call setpos( "'>", [ bufnr('%'), line_2, col_2 + len - 1 ] )
+
+	let &autoindent = autoindent_config
 endfunction
 
 function! s:InverseBrackets( char )
