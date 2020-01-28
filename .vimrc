@@ -192,6 +192,11 @@ vnoremap <silent> v <ESC>:call VisualViW()<CR>
 
 vnoremap <silent> <C-i> <ESC>:call BracketMode()<CR>
 
+nnoremap <silent> zh <ESC>:call HorizontalScrollMode('h')<CR>
+nnoremap <silent> zl <ESC>:call HorizontalScrollMode('l')<CR>
+nnoremap <silent> zH <ESC>:call HorizontalScrollMode('H')<CR>
+nnoremap <silent> zL <ESC>:call HorizontalScrollMode('L')<CR>
+
 nnoremap <silent> <F8> :call SwitchList()<CR>
 inoremap <silent> <F8> <ESC>:call SwitchList()<CR>a
 vnoremap <silent> <F8> <ESC>:call SwitchList()<CR>gv
@@ -210,6 +215,32 @@ nnoremap <silent> <space>* :call HlSearch()<CR>
 
 nnoremap <silent> g= viW:call MathEdit()<CR>
 vnoremap <silent> g= :call MathEdit()<CR>
+
+
+function! VisualViW()
+	if match( getreg('*'), '[ \t\n]' ) == -1
+		if index( [ ' ', '	', '' ], getline('.')[getpos("'<")[2]-2] ) == -1 || index( [ ' ', '	', '' ], getline('.')[getpos("'>")[2]] ) == -1
+			normal! viW
+		endif
+	endif
+endfunction
+
+
+function! HorizontalScrollMode( call_char )
+	if &wrap
+		return
+	endif
+
+	echohl Title
+	let typed_char = a:call_char
+	while index( [ 'h', 'l', 'H', 'L' ], typed_char ) != -1
+		execute 'normal! z'.typed_char
+		redraws
+		echon '-- Horizontal scrolling mode (h/l/H/L)'
+		let typed_char = nr2char(getchar())
+	endwhile
+	echohl None | echo '' | redraws
+endfunction
 
 
 function! BracketMode()
@@ -369,15 +400,6 @@ function! s:InverseBrackets( char )
 	elseif a:char == '>' | return '<'
 	else
 		return a:char
-	endif
-endfunction
-
-
-function! VisualViW()
-	if match( getreg('*'), '[ \t\n]' ) == -1
-		if index( [ ' ', '	', '' ], getline('.')[getpos("'<")[2]-2] ) == -1 || index( [ ' ', '	', '' ], getline('.')[getpos("'>")[2]] ) == -1
-			normal! viW
-		endif
 	endif
 endfunction
 
