@@ -759,6 +759,9 @@ function! s:GetBufferCount( workspace )
 endfunction
 
 function! s:PrintWorkspaces()
+	let bufname_widths = map( range( 1, bufnr('$') ), "buflisted(v:val) ? strwidth(expand('#'.v:val.':t')) : 0" )
+	let maxwidth = max( bufname_widths )
+
 	for workspace in range( 1, s:GetWorkspaceCount() )
 		let buf_list = s:GetBufferList( workspace )
 		echon "\n  " workspace '   ' | let post_spaces = ''
@@ -771,7 +774,9 @@ function! s:PrintWorkspaces()
 				if bufwinnr(buf) != -1 | echon 'a' | else | echon 'h' | endif
 				if !getbufvar(buf, '&modifiable') | echon '-' | elseif getbufvar(buf, '&readonly') | echon '=' | else | echon ' ' | endif
 				if getbufvar(buf, '&modified') | echon '+' | elseif getbufvar(buf, '&re') | echon 'x' | else | echon ' ' | endif
-				if len(bufname(buf)) == 0 | echon " [Untitled]\n" | else | echon ' 'bufname(buf)"\n" | endif
+				if len(bufname(buf)) == 0 | echon ' [Untitled]' | else | echon ' 'expand('#'.buf.':t') | endif
+				if expand('#'.buf.':h') != '.' | echon repeat( ' ', maxwidth - strwidth(expand('#'.buf.':t')) + 4 )'in 'expand('#'.buf.':h') | endif
+				echon "\n"
 				echohl None
 			endif
 		endfor
