@@ -161,6 +161,11 @@ vnoremap P Pgv<ESC>
 nnoremap Y y$
 nnoremap <C-p> D"0p
 
+nnoremap vil _vg_
+nnoremap val 0vg_
+nnoremap yil _yg_
+nnoremap yal 0yg_
+
 nnoremap <C-o> o<ESC>
 
 noremap gV `[v`]
