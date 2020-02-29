@@ -192,15 +192,18 @@ nnoremap <leader>l :redraw!<CR>
 
 nnoremap <silent> <space>$ :sh<CR>
 
+nnoremap <leader>b _i# <End> #<ESC>YP<C-v>j$r#p$
+nnoremap <leader>- _i// <End> //<ESC>YPll<C-v>jg_hhr-p$
+
 nnoremap vv viw
 vnoremap <silent> v <ESC>:call VisualViW()<CR>
 
 vnoremap <silent> <C-i> <ESC>:call BracketMode()<CR>
 
-nnoremap <silent> zh <ESC>:call HorizontalScrollMode('h')<CR>
-nnoremap <silent> zl <ESC>:call HorizontalScrollMode('l')<CR>
-nnoremap <silent> zH <ESC>:call HorizontalScrollMode('H')<CR>
-nnoremap <silent> zL <ESC>:call HorizontalScrollMode('L')<CR>
+nnoremap <silent> zh :call HorizontalScrollMode('h')<CR>
+nnoremap <silent> zl :call HorizontalScrollMode('l')<CR>
+nnoremap <silent> zH :call HorizontalScrollMode('H')<CR>
+nnoremap <silent> zL :call HorizontalScrollMode('L')<CR>
 
 nnoremap <silent> <F8> :call SwitchList()<CR>
 inoremap <silent> <F8> <ESC>:call SwitchList()<CR>a
@@ -530,7 +533,7 @@ nnoremap <Space><BS> :Delmark<CR>
 
 command! Delmark call Delmark()
 
-function Delmark()
+function! Delmark()
 	marks
 	echohl Title | echo '-- Selectionnez une marque à supprimer --' | echohl None
 	let char = nr2char(getchar())
@@ -1146,7 +1149,7 @@ augroup ide_config
 	autocmd FileType c,cpp,sh,arduino setlocal foldmethod=marker | set foldmarker={,}
 	"Ignore boost librairies for autocompletion:
 	autocmd FileType c,cpp,arduino setlocal include=^\\s*#\\s*include\ \\(<boost/\\)\\@!
-	autocmd FileType c,cpp,arduino set iskeyword+=:
+	"autocmd FileType c,cpp,arduino set iskeyword+=:
 	autocmd FileType c,cpp,arduino set smartindent
 	autocmd FileType tex setlocal foldmethod=marker
 
