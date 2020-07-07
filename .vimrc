@@ -253,7 +253,13 @@ endfunction
 
 function! BracketMode()
 	let autoindent_config = &autoindent
+	let smartindent_config = &smartindent
+	let cindent_config = &cindent
+	let softtabstop_config = &softtabstop
 	set noautoindent
+	set nosmartindent
+	set nocindent
+	set softtabstop=0
 
 	let line_1 = getpos("'<")[1]
 	let line_2 = getpos("'>")[1]
@@ -271,8 +277,12 @@ function! BracketMode()
 		let cursor_col = col_1
 	endif
 
-	let orig_line = cursor_line
+	let orig_cursor_line = cursor_line
+	let orig_line_1 = line_1
 	let orig_col_1 = col_1
+
+	let end_line = line_2
+	let end_col = col_2 - 1
 
 	call matchaddpos( 'Cursor', [ [ cursor_line, cursor_col ] ] )
 	redraws
@@ -282,8 +292,9 @@ function! BracketMode()
 	let typed_char = nr2char(getchar())
 	while index( [ '', '', '	', '' ], typed_char ) == -1
 
+		"TODO Identity the backspace key
 		if typed_char == ''
-			if cursor_line == orig_line && len <= 0
+			if cursor_line == orig_cursor_line && len <= 0
 				let typed_char = nr2char(getchar())
 				continue
 			endif
@@ -304,6 +315,10 @@ function! BracketMode()
 				let len -= 1
 				if line_2 == line_1 | let col_2 -= 1 | endif
 				let cursor_col -= left || line_2 > line_1 ? 1 : 2
+
+				if !left || cursor_line == orig_cursor_line
+					let end_col -= line_2 == line_1 ? 2 : 1
+				endif
 			else
 				let len = prev_line_len
 				if left
@@ -319,11 +334,18 @@ function! BracketMode()
 					let cursor_line = line_2
 					let cursor_col = col_2 + len
 				endif
-				if cursor_line == orig_line
+				if cursor_line == orig_cursor_line
 					let col_1 = orig_col_1
 					let col_2 = orig_col_2
 					let len = orig_len
 					let cursor_col = ( left ? col_1 : col_2 ) + len
+				endif
+
+				let end_line -= 2
+				if cursor_line == orig_cursor_line
+					let end_col = orig_col_2 + len - 1
+				elseif !left
+					let end_col = prev_line_len
 				endif
 			endif
 		else
@@ -342,7 +364,16 @@ function! BracketMode()
 			execute 'normal!' ( col > 0 ? 'a' : 'i' ).typed_char
 
 			if typed_char == ''
-				if cursor_line == orig_line
+				let end_line += 2
+				if left
+					if cursor_line == orig_cursor_line
+						let end_col = len
+					endif
+				else
+					let end_col = 0
+				endif
+
+				if cursor_line == orig_cursor_line
 					let orig_col_2 = col_2
 					let orig_len = len
 				endif
@@ -360,6 +391,10 @@ function! BracketMode()
 				let len = 0
 				let cursor_col = 1
 			else
+				if !left || cursor_line == orig_cursor_line
+					let end_col += line_2 == line_1 ? 2 : 1
+				endif
+
 				let len += 1
 				if line_2 == line_1 | let col_2 += 1 | endif
 				let cursor_col += left || line_2 > line_1 ? 1 : 2
@@ -367,12 +402,22 @@ function! BracketMode()
 		endif
 
 		call clearmatches()
-		"for l in range( 1, max([ 0, ( cursor_line - orig_line - 1 )/( left ? 1 : 2 ) ]) )
-			"call matchaddpos( 'MatchParen', [ line_1 + l, line_2 - l ] )
-		"endfor
-		"if len > 0
-			"call matchaddpos( 'MatchParen', [ [ line_1, col_1, len ], [ line_2, col_2, len ] ] )
-		"endif
+		if cursor_line != orig_cursor_line && orig_len > 0
+			let offset = ( cursor_line - orig_cursor_line - 1 )/( left ? 1 : 2 ) + 1
+			if left
+				call matchaddpos( 'MatchParen', [ [ orig_line_1, orig_col_1, orig_len ], [ line_2 + offset, 1, orig_len ] ] )
+			else
+				call matchaddpos( 'MatchParen', [ [ line_1 + offset, 1, orig_len ], [ line_1 + offset, orig_col_2 - orig_col_1 + 1, orig_len ] ] )
+			endif
+		endif
+		for l in range( 1, max([ 0, ( cursor_line - orig_cursor_line - 1 )/( left ? 1 : 2 ) ]) )
+			if strwidth( getline( line_1 + l ) ) > 0
+				call matchaddpos( 'MatchParen', [ line_1 + l, line_2 - l ] )
+			endif
+		endfor
+		if len > 0
+			call matchaddpos( 'MatchParen', [ [ line_1, col_1, len ], [ line_2, col_2, len ] ] )
+		endif
 		call matchaddpos( 'Cursor', [ [ cursor_line, cursor_col ] ] )
 		redraws
 		echon '-- BRACKET --'
@@ -384,17 +429,27 @@ function! BracketMode()
 	echo ''
 	redraws
 
+	if end_col == 0
+		let orig_line_1 +=1
+		let orig_col_1 = 1
+		let end_line -= 1
+		let end_col = strwidth(getline(end_line))
+	endif
+
 	if left || typed_char == ''
-		call setpos( '.', [ bufnr('%'), orig_line, orig_col_1 ] )
+		call setpos( '.', [ bufnr('%'), orig_line_1, orig_col_1 ] )
 	else
-		call setpos( '.', [ bufnr('%'), line_2, col_2 + len - 1 ] )
+		call setpos( '.', [ bufnr('%'), end_line, end_col ] )
 	endif
 	execute "normal! a\<ESC>"
-	"TODO Set previous visual to all modified area when left = 1 as well
-	call setpos( "'<", [ bufnr('%'), line_1, col_1 ] )
-	call setpos( "'>", [ bufnr('%'), line_2, col_2 + len - 1 ] )
+
+	call setpos( "'<", [ bufnr('%'), orig_line_1, orig_col_1 ] )
+	call setpos( "'>", [ bufnr('%'), end_line, end_col ] )
 
 	let &autoindent = autoindent_config
+	let &smartindent = smartindent_config
+	let &cindent = cindent_config
+	let &softtabstop = softtabstop_config
 endfunction
 
 function! s:InverseBrackets( char )
@@ -1075,7 +1130,7 @@ endfunction
 "" Explorateur de fichiers ""{{{
 
 let g:netrw_bufsettings = 'noma nomod nonu nowrap ro bl'
-let g:netrw_liststyle = 2
+let g:netrw_liststyle = 3
 let g:netrw_winsize = 30
 let g:netrw_browsex_viewer = 'kde-open'
 
