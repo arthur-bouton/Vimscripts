@@ -749,8 +749,14 @@ function! s:SaveAs(bang, newfile)
     endif
 endfunction
 
+""}}}
 
-" Buffer workspaces "
+
+"" Buffer workspaces ""{{{
+
+"DEBUG FUNCTIONS"
+nnoremap <F2> :PrintBwsList<CR>
+command! PrintBwsList echo s:bws_list
 
 nnoremap <silent> <Space><Tab> :BufWorkspaces<CR>
 nnoremap <silent> <Tab> :NextBuffer<CR>
@@ -810,7 +816,7 @@ function! s:BufWorkspaces()
 			else
 				" Create a new workspace with the current buffer:
 				call s:CreateWorkspace( bufnr('%') )
-				silent execute 'buffer' prev_ws_buf
+				"silent execute 'buffer' prev_ws_buf
 				redraw | echomsg 'New workspace created with buffer' bufnr('%')
 			endif
 		else
