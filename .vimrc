@@ -57,6 +57,7 @@ augroup update_local_directory
 	autocmd!
 	autocmd BufEnter * silent! lcd %:p:h
 augroup end
+autocmd FileType netrw setl bufhidden=wipe
 
 " Restore the previous cursor position when reopening a file:
 augroup restore_cursor_position
@@ -1151,7 +1152,7 @@ nnoremap <buffer> !S (c)
 
 augroup text_mode
 	autocmd!
-	autocmd FileType text call s:Load_text_mode()
+	autocmd FileType text,markdown call s:Load_text_mode()
 augroup end
 
 function! s:Load_text_mode()
@@ -1204,7 +1205,7 @@ augroup ide_config
 	autocmd FileType c,cpp,sh,arduino setlocal foldmethod=marker | set foldmarker={,}
 	"Ignore boost librairies for autocompletion:
 	autocmd FileType c,cpp,arduino setlocal include=^\\s*#\\s*include\ \\(<boost/\\)\\@!
-	"autocmd FileType c,cpp,arduino set iskeyword+=:
+	autocmd FileType c,cpp,arduino set iskeyword-=:
 	autocmd FileType c,cpp,arduino set smartindent
 	autocmd FileType tex setlocal foldmethod=marker
 
@@ -1213,6 +1214,8 @@ augroup ide_config
 	autocmd FileType c,cpp,arduino let b:comment_char = '//'
 	autocmd FileType tex,plaintex,matlab let b:comment_char = '%'
 	autocmd FileType lua let b:comment_char = '--'
+
+    autocmd Bufread,BufNewFile *.fpp{,i} set filetype=fpp
 augroup end
 
 nnoremap <silent> é :call SwitchComment(1)<CR>
@@ -1581,10 +1584,12 @@ set syntax+=
 
 set rtp+=~/.fzf
 
-nnoremap <space>! :History<CR>
-nnoremap <space>: :BLines<CR>
 nnoremap <leader>e :FZF 
-nnoremap <leader>g :GitFiles<CR>
+
+" Browse history:
+nnoremap <space>! :call fzf#run({'source': v:oldfiles, 'sink': 'e', 'right': '80%'})<CR>
+" Browse git files:
+nnoremap <leader>g :call fzf#run({'source': 'git ls-files', 'sink': 'e', 'right': '80%'})<CR>
 
 ""}}}
 
