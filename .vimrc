@@ -765,15 +765,16 @@ nnoremap <silent> <S-Tab> :PrevBuffer<CR>
 command! BufWorkspaces call s:BufWorkspaces()
 command! NextBuffer exe 'b' s:GetNextBuffer( bufnr('%') )
 command! PrevBuffer exe 'b' s:GetPrevBuffer( bufnr('%') )
+command! ClearAllWorkspaces call s:ClearAllWorkspaces()
 
-"augroup set_new_buffer_workspace
-	"autocmd!
-	"autocmd BufRead * call s:MoveBufferToWorkspace( bufnr('%'), s:GetBufferWorkspace(bufnr('#')) )
-	"autocmd BufAdd  * call s:MoveBufferToWorkspace( bufnr('$'), s:GetBufferWorkspace(bufnr('%')) )
+augroup set_new_buffer_workspace
+	autocmd!
+	autocmd BufRead * call s:MoveBufferToWorkspace( bufnr('%'), s:GetBufferWorkspace(bufnr('#')) )
+	autocmd BufAdd  * call s:MoveBufferToWorkspace( bufnr('$'), s:GetBufferWorkspace(bufnr('%')) )
 
 	"autocmd BufRead * echo 'BufRead' bufnr('%') bufnr('#')
 	"autocmd BufAdd * echo 'BufAdd' bufnr('$') bufnr('%')
-"augroup end
+augroup end
 
 augroup clean_workspace
 	autocmd!
@@ -975,12 +976,17 @@ function! s:MoveBufferToWorkspace( buffer, destination_ws )
 	call s:RemoveBufferFromWorkspace( a:buffer, buffer_ws )
 endfunction
 
+function! s:ClearAllWorkspaces()
+    let s:bws_list = []
+endfunction
+
 ""}}}
 
 
 "" Gestion des Sessions ""{{{
 
-set sessionoptions=curdir,buffers,winsize,folds,blank,help,tabpages,options,localoptions,globals
+"set sessionoptions=curdir,buffers,winsize,folds,blank,help,tabpages,options,localoptions,globals
+set sessionoptions=buffers,winsize,folds,blank,help,tabpages,options,localoptions,globals
 
 let g:sessions_path = s:root_dir.'/sessions/'
 let g:default_session = '.latest'
