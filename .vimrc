@@ -980,6 +980,52 @@ function! s:ClearAllWorkspaces()
     let s:bws_list = []
 endfunction
 
+
+" Save and restore buffer workspaces "
+
+function! s:SaveBufWorkspace( path, name )
+	" Shift the buffer numbers so they start at 2 and fill the possible gaps between them:
+	let shift_list = [ buflisted( 1 ) ? 1 : 0 ]
+	let prev_buf = 1
+	for buf in range( 2, bufnr('$') )
+		if buflisted(buf)
+			call add( shift_list, prev_buf + 1 - buf + shift_list[-1] )
+			let prev_buf = buf
+		else
+			call add( shift_list, shift_list[-1] )
+		endif
+	endfor
+
+	" Translate the list of list of buffer numbers to a list of strings:
+	let bws_string_list = []
+	for bws in s:bws_list
+		call add( bws_string_list, join( map( copy( bws ), 'v:val + shift_list[v:val-1]' ) ) )
+	endfor
+
+	call writefile( bws_string_list, expand( a:path.'/.'.a:name.'.bws' ) )
+endfunction
+
+function! s:LoadBufWorkspace( path, name )
+	let glob_path = glob( a:path.'/.'.a:name.'.bws' )
+	if empty( glob_path )
+		return -1
+	endif
+
+	let bws_string_list = readfile( glob_path )
+
+	" Translate the list of strings to a list of list of buffer numbers:
+	let s:bws_list = []
+	for bws_string in bws_string_list
+		call add( s:bws_list, map( split( bws_string ), 'str2nr( v:val )' ) )
+	endfor
+
+	return 0
+endfunction
+
+function! s:DeleteBufWorkspace( path, name )
+	call delete( expand( a:path.'/.'.a:name.'.bws' ) )
+endfunction
+
 ""}}}
 
 
@@ -1107,52 +1153,6 @@ endfunction
 
 function! FileCompletion(ArgLead, CmdLine, CursorPos)
     return map(split(globpath(g:sessions_path, '*'.a:ArgLead.'*'), '\n'), "fnamemodify(v:val, ':t')")
-endfunction
-
-
-" Save and restore buffer workspaces "
-
-function! s:SaveBufWorkspace( path, name )
-	" Shift the buffer numbers so they start at 2 and fill the possible gaps between them:
-	let shift_list = [ buflisted( 1 ) ? 1 : 0 ]
-	let prev_buf = 1
-	for buf in range( 2, bufnr('$') )
-		if buflisted(buf)
-			call add( shift_list, prev_buf + 1 - buf + shift_list[-1] )
-			let prev_buf = buf
-		else
-			call add( shift_list, shift_list[-1] )
-		endif
-	endfor
-
-	" Translate the list of list of buffer numbers to a list of strings:
-	let bws_string_list = []
-	for bws in s:bws_list
-		call add( bws_string_list, join( map( copy( bws ), 'v:val + shift_list[v:val-1]' ) ) )
-	endfor
-
-	call writefile( bws_string_list, expand( a:path.'/.'.a:name.'.bws' ) )
-endfunction
-
-function! s:LoadBufWorkspace( path, name )
-	let glob_path = glob( a:path.'/.'.a:name.'.bws' )
-	if empty( glob_path )
-		return -1
-	endif
-
-	let bws_string_list = readfile( glob_path )
-
-	" Translate the list of strings to a list of list of buffer numbers:
-	let s:bws_list = []
-	for bws_string in bws_string_list
-		call add( s:bws_list, map( split( bws_string ), 'str2nr( v:val )' ) )
-	endfor
-
-	return 0
-endfunction
-
-function! s:DeleteBufWorkspace( path, name )
-	call delete( expand( a:path.'/.'.a:name.'.bws' ) )
 endfunction
 
 ""}}}
