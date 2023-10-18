@@ -225,6 +225,24 @@ nnoremap <silent> <space>* :call HlSearch()<CR>
 nnoremap <silent> g= viW:call MathEdit()<CR>
 vnoremap <silent> g= :call MathEdit()<CR>
 
+nnoremap <silent> <F1> :call FindCursor()<CR>
+inoremap <silent> <F1> <ESC>:call FindCursor()<CR>a
+
+
+function! FindCursor()
+	if ! &cursorline || ! &cursorcolumn
+		let s:cursorline_prev_state = &cursorline
+		let s:cursorcolumn_prev_state = &cursorcolumn
+		set cursorline
+		set cursorcolumn
+		hi CursorLine ctermfg=NONE ctermbg=17 cterm=NONE guifg=NONE guibg=#232a32 gui=NONE
+	else
+		let &cursorline = s:cursorline_prev_state
+		let &cursorcolumn = s:cursorcolumn_prev_state
+		hi CursorLine ctermfg=NONE ctermbg=NONE cterm=NONE guifg=NONE guibg=NONE gui=NONE
+	endif
+endfunction
+
 
 function! VisualViW()
 	if match( getreg('*'), '[ \t\n]' ) == -1
