@@ -765,7 +765,6 @@ nnoremap <silent> <S-Tab> :PrevBuffer<CR>
 command! BufWorkspaces call s:BufWorkspaces()
 command! NextBuffer exe 'b' s:GetNextBuffer( bufnr('%') )
 command! PrevBuffer exe 'b' s:GetPrevBuffer( bufnr('%') )
-command! ClearAllWorkspaces call s:ClearAllWorkspaces()
 
 augroup set_new_buffer_workspace
 	autocmd!
@@ -974,10 +973,6 @@ function! s:MoveBufferToWorkspace( buffer, destination_ws )
 	endif
 
 	call s:RemoveBufferFromWorkspace( a:buffer, buffer_ws )
-endfunction
-
-function! s:ClearAllWorkspaces()
-    let s:bws_list = []
 endfunction
 
 
