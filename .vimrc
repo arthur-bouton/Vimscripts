@@ -816,10 +816,10 @@ function! s:BufWorkspaces()
 		if answer > ws_count + 1
 			redraw | echohl Error | echo 'Wrong workspace number' | echohl None
 		elseif answer == current_ws
-			redraw | echo 'The buffer' bufnr('%') 'is already in workspace' answer
+			redraw | echo 'Buffer' bufnr('%') 'is already in workspace' answer
 		elseif answer == ws_count + 1
 			if s:GetBufferCount( current_ws ) < 2
-				redraw | echo 'The buffer' bufnr('%') 'is the only buffer in workspace' current_ws
+				redraw | echo 'Buffer' bufnr('%') 'is the only buffer in workspace' current_ws
 			else
 				" Create a new workspace with the current buffer:
 				call s:CreateWorkspace( bufnr('%') )
@@ -830,7 +830,7 @@ function! s:BufWorkspaces()
 			" Move the current buffer to the given workspace number:
 			call s:MoveBufferToWorkspace( bufnr('%'), answer )
 			silent execute 'buffer' prev_ws_buf
-			redraw | echomsg 'The buffer' bufnr('%') 'has been moved to the workspace' answer
+			redraw | echomsg 'Buffer' bufnr('%') 'moved to workspace' answer
 		endif
 	elseif answer == 'D'
 		let s:bws_list = []
