@@ -973,6 +973,7 @@ function! s:MoveBufferToWorkspace( buffer, destination_ws )
 
 	if a:destination_ws > 1
 		call add( s:bws_list[a:destination_ws - 2], a:buffer )
+        call sort( s:bws_list[a:destination_ws - 2] )
 	endif
 
 	call s:RemoveBufferFromWorkspace( a:buffer, buffer_ws )
