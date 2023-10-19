@@ -770,17 +770,22 @@ command! PrevBuffer exe 'b' s:GetPrevBuffer( bufnr('%') )
 
 augroup set_new_buffer_workspace
 	autocmd!
-	autocmd BufRead * call s:MoveBufferToWorkspace( bufnr('%'), s:GetBufferWorkspace(bufnr('#')) )
-	autocmd BufAdd  * call s:MoveBufferToWorkspace( bufnr('$'), s:GetBufferWorkspace(bufnr('%')) )
-
-	"autocmd BufRead * echo 'BufRead' bufnr('%') bufnr('#')
-	"autocmd BufAdd * echo 'BufAdd' bufnr('$') bufnr('%')
+	autocmd BufRead,BufNewFile * call s:MoveBufferToWorkspace( bufnr('%'), s:GetBufferWorkspace(bufnr('#')) )
 augroup end
 
 augroup clean_workspace
 	autocmd!
-	autocmd BufDelete * call s:RemoveBufferFromWorkspace( bufnr('#'), s:GetBufferWorkspace(bufnr('#')) )
+	autocmd BufDelete * call s:RemoveDeletedBufferFromWorkspace()
 augroup end
+
+function! s:RemoveDeletedBufferFromWorkspace()
+    if buflisted( bufnr('%') )
+        let deleted_buffer = bufnr('#')
+    else
+        let deleted_buffer = bufnr('%')
+    endif
+    call s:RemoveBufferFromWorkspace( deleted_buffer, s:GetBufferWorkspace( deleted_buffer ) )
+endfunction
 
 let s:bws_list = []
 
@@ -833,7 +838,7 @@ function! s:BufWorkspaces()
 	elseif answer == 'b'
 		redrawstatus
 		call s:PrintWorkspaces()
-		echohl Title | let buf = input( ':b ', '', 'buffer' ) | echohl None
+		echon "\n" | echohl Title | let buf = input( ':b ', '', 'buffer' ) | echohl None
 		execute 'buffer' buf
 	else
 		redrawstatus
@@ -976,7 +981,7 @@ endfunction
 
 " Save and restore buffer workspaces "
 
-function! s:SaveBufWorkspace( path, name )
+function! s:SaveBufWorkspaceFile( path, name )
 	" Translate the list of list of buffer numbers to a list of strings:
 	let bws_string_list = []
 	for bws in s:bws_list
@@ -986,7 +991,7 @@ function! s:SaveBufWorkspace( path, name )
 	call writefile( bws_string_list, expand( a:path.'/'.a:name.'.bws' ) )
 endfunction
 
-function! s:LoadBufWorkspace( path, name )
+function! s:LoadBufWorkspaceFile( path, name )
 	let glob_path = glob( a:path.'/'.a:name.'.bws' )
 	if empty( glob_path )
 		return -1
@@ -1003,7 +1008,7 @@ function! s:LoadBufWorkspace( path, name )
 	return 0
 endfunction
 
-function! s:DeleteBufWorkspace( path, name )
+function! s:DeleteBufWorkspaceFile( path, name )
 	call delete( expand( a:path.'/.'.a:name.'.bws' ) )
 endfunction
 
@@ -1022,7 +1027,7 @@ let s:current_session = g:default_session
 augroup autosave_session
 	autocmd!
 	autocmd VimLeave * execute 'mksession!' g:sessions_path.g:default_session
-	autocmd VimLeave * call s:SaveBufWorkspace(g:sessions_path, g:default_session)
+	autocmd VimLeave * call s:SaveBufWorkspaceFile(g:sessions_path, g:default_session)
 augroup end
 
 command! RestoreSession call s:RestoreSession()
@@ -1035,7 +1040,7 @@ command! -nargs=+ -complete=customlist,FileCompletion DeleteSession call s:Delet
 function! s:RestoreSession()
     if !empty(globpath(g:sessions_path, g:default_session))
         execute 'source' g:sessions_path.g:default_session
-		call s:LoadBufWorkspace(g:sessions_path, g:default_session)
+		call s:LoadBufWorkspaceFile(g:sessions_path, g:default_session)
     else
         echohl ErrorMsg | echo 'Aucune session à restorer' | echohl None
     endif
@@ -1049,14 +1054,14 @@ function! s:NewSession(bang, session_name)
 				call add(modbufs, buf)
 			endif
 		endfor
-		if empty(modbufs) || a:bang == 1
+		if empty(modbufs) || a:bang
 			for buf in range(1, bufnr('$'))
 				if bufexists(buf)
 					execute 'bdelete!' buf
 				endif
 			endfor
 			execute 'mksession!' g:sessions_path.g:default_session
-			call s:SaveBufWorkspace(g:sessions_path, g:default_session)
+			call s:SaveBufWorkspaceFile(g:sessions_path, g:default_session)
 			if s:current_session ==# g:default_session
 				echo "Aucune session particulière n'était ouverte"
 			else
@@ -1073,7 +1078,7 @@ function! s:NewSession(bang, session_name)
 	else
 		if empty(globpath(g:sessions_path, a:session_name))
 			execute 'mksession' g:sessions_path.a:session_name
-			call s:SaveBufWorkspace(g:sessions_path, a:session_name)
+			call s:SaveBufWorkspaceFile(g:sessions_path, a:session_name)
 			redraw
 			echomsg 'Session' a:session_name 'créée'
 			let s:current_session = a:session_name
@@ -1086,7 +1091,7 @@ endfunction
 function! s:SaveSession()
     if s:current_session !=# g:default_session && !empty(globpath(g:sessions_path, s:current_session))
         execute 'mksession!' g:sessions_path.s:current_session
-		call s:SaveBufWorkspace(g:sessions_path, s:current_session)
+		call s:SaveBufWorkspaceFile(g:sessions_path, s:current_session)
 		redraw
         echomsg 'Session' s:current_session 'enregistrée'
     else
@@ -1097,7 +1102,7 @@ endfunction
 function! s:OverwriteSession(session_name)
     if !empty(globpath(g:sessions_path, a:session_name))
         execute 'mksession!' g:sessions_path.a:session_name
-		call s:SaveBufWorkspace(g:sessions_path, a:session_name)
+		call s:SaveBufWorkspaceFile(g:sessions_path, a:session_name)
 		redraw
         echomsg 'Session' a:session_name 'écrasée'
         let s:current_session = a:session_name
@@ -1109,7 +1114,7 @@ endfunction
 function! s:OpenSession(session_name)
     if !empty(globpath(g:sessions_path, a:session_name))
         execute 'source' g:sessions_path.a:session_name
-		call s:LoadBufWorkspace(g:sessions_path, a:session_name)
+		call s:LoadBufWorkspaceFile(g:sessions_path, a:session_name)
         let s:current_session = a:session_name
     else
         echohl ErrorMsg | echo 'La session' a:session_name "n'existe pas" | echohl None
@@ -1120,7 +1125,7 @@ function! s:DeleteSession(session_name)
 	for session in split(a:session_name)
 		if !empty(globpath(g:sessions_path, session))
 			call delete(expand(g:sessions_path.session))
-			call s:DeleteBufWorkspace(g:sessions_path, a:session_name)
+			call s:DeleteBufWorkspaceFile(g:sessions_path, a:session_name)
 			if session ==# s:current_session
 				let s:current_session = g:default_session
 			endif
@@ -1593,10 +1598,8 @@ set syntax+=
 
 "" FZF ""{{{
 
-set rtp+=~/.fzf
-
-nnoremap <leader>e :FZF 
-
+" Start searching for files (by default from the current directory):
+nnoremap <space>: :FZF 
 " Browse history:
 nnoremap <space>! :call fzf#run({'source': v:oldfiles, 'sink': 'e', 'right': '80%'})<CR>
 " Browse git files:
