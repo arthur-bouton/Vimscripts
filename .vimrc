@@ -755,8 +755,10 @@ endfunction
 "" Buffer workspaces ""{{{
 
 "DEBUG FUNCTIONS"
-nnoremap <F2> :PrintBwsList<CR>
-command! PrintBwsList echo s:bws_list
+nnoremap <F2> :EchoBwsList<CR>
+command! EchoBwsList echo s:bws_list
+nnoremap <F3> :EchoBufferList<CR>
+command! EchoBufferList echo s:GetBufferList( 1 )
 
 nnoremap <silent> <Space><Tab> :BufWorkspaces<CR>
 nnoremap <silent> <Tab> :NextBuffer<CR>
@@ -884,15 +886,11 @@ endfunction
 function! s:GetBufferList( workspace )
 	if a:workspace == 1
 		let buf_list = []
-		"let ws_buffers = []
-		"for blist in range( len(s:bws_list) )
-			"call extend( ws_buffers, blist )
-		"endfor
+        let flat_bws_list = reduce( s:bws_list, { acc, val -> extend( acc, val ) }, [] )
 		for buf in range( 1, bufnr('$') )
-			"if buflisted(buf) && index( ws_buffers, buf ) == -1
-			if buflisted(buf) && match( join( s:bws_list ), '\(\[\| \)'.buf ) == -1
-				call add( buf_list, buf )
-			endif
+			if buflisted(buf) && index( flat_bws_list, buf ) == -1
+                call add( buf_list, buf )
+            endif
 		endfor
 		return buf_list
 	elseif a:workspace - 2 < len(s:bws_list) && a:workspace - 2 >= 0
