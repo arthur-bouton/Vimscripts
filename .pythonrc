@@ -47,8 +47,14 @@ else :
 del histfile
 
 try :
-	from numpy import *
+	import numpy as np
 	loaded.append( 'numpy' )
+except ImportError as e :
+	print( e )
+
+try :
+	from looptools import *
+	loaded.append( 'looptools' )
 except ImportError as e :
 	print( e )
 
