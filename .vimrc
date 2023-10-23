@@ -947,9 +947,12 @@ function! s:RemoveBufferFromWorkspace( buffer, workspace )
 		if len(s:bws_list[a:workspace - 2]) == 0
 			call remove( s:bws_list, a:workspace - 2 )
 		endif
-	elseif len(s:GetBufferList( 1 )) == 0
-		call remove( s:bws_list, 0 )
-	endif
+    elseif len(s:bws_list) > 0
+        let first_ws_buffers = s:GetBufferList( 1 )
+        if len(first_ws_buffers) == 0 || len(first_ws_buffers) == 1 && first_ws_buffers[0] == a:buffer
+            call remove( s:bws_list, 0 )
+        endif
+    endif
 endfunction
 
 function! s:CreateWorkspace( buffer )
