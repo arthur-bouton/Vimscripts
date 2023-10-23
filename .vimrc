@@ -770,7 +770,8 @@ command! PrevBuffer exe 'b' s:GetPrevBuffer( bufnr('%') )
 
 augroup set_new_buffer_workspace
 	autocmd!
-	autocmd BufRead,BufNewFile * call s:MoveBufferToWorkspace( bufnr('%'), s:GetBufferWorkspace(bufnr('#')) )
+	autocmd BufAdd * call s:MoveBufferToWorkspace( bufnr('$'), s:GetBufferWorkspace(bufnr('%')) )
+	autocmd BufNewFile * call s:MoveBufferToWorkspace( bufnr('%'), s:GetBufferWorkspace(bufnr('#')) )
 augroup end
 
 augroup clean_workspace
