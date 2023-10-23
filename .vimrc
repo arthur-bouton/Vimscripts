@@ -790,59 +790,61 @@ endfunction
 let s:bws_list = []
 
 function! s:BufWorkspaces()
-	call s:PrintWorkspaces()
+    while 1
+        redraw
+        call s:PrintWorkspaces()
 
-	let ws_count = s:GetWorkspaceCount()
-	let current_ws = s:GetBufferWorkspace( bufnr('%') )
-	let prev_ws_buf = s:GetPrevBuffer( bufnr('%') )
+        let ws_count = s:GetWorkspaceCount()
+        let current_ws = s:GetBufferWorkspace( bufnr('%') )
+        let prev_ws_buf = s:GetPrevBuffer( bufnr('%') )
 
-	if ws_count > 1
-		echo ' [1-'.ws_count."] change buffer's ws    "
-	else
-		echo ' '
-	endif
-	echon '[' ws_count + 1 '] create ws    [n] next ws    [p] prev ws    [D] delete all ws    [b] open buffer'
-	echohl Question | echo '-- Enter a command or any other key to cancel --' | echohl None
-	let answer = nr2char(getchar())
-	if answer == 'n'
-		redraw
-		if ws_count == 1 | return | endif
-		execute 'buffer' min( s:GetNextWorkspace( current_ws ) )
-	elseif answer == 'p'
-		redraw
-		if ws_count == 1 | return | endif
-		execute 'buffer' min( s:GetPrevWorkspace( current_ws ) )
-	elseif match( answer, '[1-9]' ) != -1
-		if answer > ws_count + 1
-			redraw | echohl Error | echo 'Wrong workspace number' | echohl None
-		elseif answer == current_ws
-			redraw | echo 'Buffer' bufnr('%') 'is already in workspace' answer
-		elseif answer == ws_count + 1
-			if s:GetBufferCount( current_ws ) < 2
-				redraw | echo 'Buffer' bufnr('%') 'is the only buffer in workspace' current_ws
-			else
-				" Create a new workspace with the current buffer:
-				call s:CreateWorkspace( bufnr('%') )
-				"silent execute 'buffer' prev_ws_buf
-				redraw | echomsg 'New workspace created with buffer' bufnr('%')
-			endif
-		else
-			" Move the current buffer to the given workspace number:
-			call s:MoveBufferToWorkspace( bufnr('%'), answer )
-			silent execute 'buffer' prev_ws_buf
-			redraw | echomsg 'Buffer' bufnr('%') 'moved to workspace' answer
-		endif
-	elseif answer == 'D'
-		let s:bws_list = []
-		redraw | echomsg 'All the workspaces have been deleted'
-	elseif answer == 'b'
-		redrawstatus
-		call s:PrintWorkspaces()
-		echon "\n" | echohl Title | let buf = input( ':b ', '', 'buffer' ) | echohl None
-		execute 'buffer' buf
-	else
-		redrawstatus
-	endif
+        if ws_count > 1
+            echo ' [1-'.ws_count."] change buffer's ws    "
+        else
+            echo ' '
+        endif
+        echon '[' ws_count + 1 '] create ws    [n] next ws    [p] prev ws    [D] delete all ws    [b] open buffer'
+        echohl Question | echo '-- Enter a command or any other key to close --' | echohl None
+        let answer = getcharstr()
+        if answer == 'n'
+            if ws_count > 1
+                execute 'buffer' min( s:GetNextWorkspace( current_ws ) )
+            endif
+        elseif answer == 'p'
+            if ws_count > 1
+                execute 'buffer' min( s:GetPrevWorkspace( current_ws ) )
+            endif
+        elseif match( answer, '[1-9]' ) != -1
+            if answer > ws_count + 1 || answer == current_ws
+                continue
+            elseif answer == ws_count + 1
+                if s:GetBufferCount( current_ws ) > 1
+                    " Create a new workspace with the current buffer:
+                    call s:CreateWorkspace( bufnr('%') )
+                    "silent execute 'buffer' prev_ws_buf
+                endif
+            else
+                " Move the current buffer to the given workspace number:
+                call s:MoveBufferToWorkspace( bufnr('%'), answer )
+                silent execute 'buffer' prev_ws_buf
+            endif
+        elseif answer == 'D'
+            let s:bws_list = []
+        elseif answer == 'b'
+            redrawstatus
+            call s:PrintWorkspaces()
+            echon "\n" | echohl Title | let buf = input( ':b ', '', 'buffer' ) | echohl None
+            execute 'buffer' buf
+        elseif answer == "\<Tab>"
+            execute 'buffer' s:GetNextBuffer( bufnr('%') )
+        elseif answer == "\<S-Tab>"
+            execute 'buffer' s:GetPrevBuffer( bufnr('%') )
+        else
+            redrawstatus
+            break
+        endif
+
+    endwhile
 endfunction
 
 function! s:GetWorkspaceCount()
