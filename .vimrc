@@ -1010,6 +1010,10 @@ function! s:LoadBufWorkspaceFile( path, name )
 	for bws_string in bws_string_list
 		call add( s:bws_list, map( split( bws_string ), 'bufnr( v:val )' ) )
 	endfor
+    " Reorder the buffers in each workspace:
+    for ws_index in range( 0, len(s:bws_list) - 1 )
+        call sort( s:bws_list[ws_index] )
+	endfor
 
 	return 0
 endfunction
