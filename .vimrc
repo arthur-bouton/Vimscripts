@@ -995,11 +995,11 @@ function! s:SaveBufWorkspaceFile( path, name )
 		call add( bws_string_list, join( map( copy( bws ), "expand('#'.v:val.':p')" ) ) )
 	endfor
 
-	call writefile( bws_string_list, expand( a:path.'/'.a:name.'.bws' ) )
+	call writefile( bws_string_list, expand( a:path.'/.'.a:name.'.bws' ) )
 endfunction
 
 function! s:LoadBufWorkspaceFile( path, name )
-	let glob_path = glob( a:path.'/'.a:name.'.bws' )
+	let glob_path = glob( a:path.'/.'.a:name.'.bws' )
 	if empty( glob_path )
 		return -1
 	endif
