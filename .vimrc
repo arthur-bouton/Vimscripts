@@ -1298,11 +1298,26 @@ endfunction
 
 function! s:Format()
 	normal! ^
-	while search('(\|,', 'c', line('.'))
-		if getline('.')[col('.')-1:col('.')] == '()'
-			normal! l
-			continue
+	while search('(\|[\|{', 'c', line('.'))
+		while getline('.')[col('.')] == ' '
+			normal! lxh
+		endwhile
+		if col('.') == strlen(getline('.'))
+			break
 		endif
+		normal! l
+	endwhile
+
+	normal! ^
+	while search(')\|]\|}', '', line('.'))
+		while getline('.')[col('.')-2] == ' '
+			normal! hx
+		endwhile
+		normal! l
+	endwhile
+
+	normal! ^
+	while search(',', 'c', line('.'))
 		while getline('.')[col('.')] == ' '
 			normal! lxh
 		endwhile
@@ -1311,17 +1326,23 @@ function! s:Format()
 		endif
 		normal! a 
 	endwhile
+endfunction
+
+function! s:GFormat()
+	normal! ^
+	while search('\<m_[a-zA-Z]', 'c', line('.'))
+        normal! 2xea_
+	endwhile
 
 	normal! ^
-	while search(')', '', line('.'))
-		if getline('.')[col('.')-2:col('.')-1] == '()'
-			continue
-		endif
-		while getline('.')[col('.')-2] == ' '
-			normal! hx
-		endwhile
-		normal! i l
+	while search('[a-zA-Z]_[a-zA-Z]*[a-z][a-zA-Z]*\(_[a-zA-Z]*\)*(', 'c', line('.'))
+        normal! lxvUmmbvU`m
 	endwhile
+
+	"normal! ^
+	"while search('\<[a-z][a-zA-Z]*[A-Z][a-zA-Z]', 'c', line('.'))
+        "normal! vU
+	"endwhile
 endfunction
 
 ""}}}
